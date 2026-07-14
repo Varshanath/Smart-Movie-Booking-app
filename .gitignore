@@ -5,3 +5,21 @@
 /captures/
 /build/
 app/build/
+
+# Flutter
+frontend/flutter_app/.dart_tool/
+frontend/flutter_app/.flutter-plugins
+frontend/flutter_app/.flutter-plugins-dependencies
+frontend/flutter_app/.packages
+frontend/flutter_app/build/
+frontend/flutter_app/pubspec.lock
+
+# Backend
+backend/node_modules/
+backend/dist/
+backend/build/
+backend/coverage/
+backend/.env
+
+# Logs
+*.log
