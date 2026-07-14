@@ -1,12 +1,24 @@
 # Flutter App
 
-This folder is reserved for the Flutter Android frontend.
+This folder contains the Flutter Android frontend source.
 
-After Flutter is installed, run this command from this folder:
+It currently includes:
+
+- Login page
+- Registration page
+- Material app routing
+- Shared app theme
+- Shared authentication page shell
+
+If the Android runner files are missing, run this command from this folder after
+Flutter is installed:
 
 ```bash
 flutter create .
 ```
 
-Keep feature code under `lib/features/` and shared application code under
-`lib/core/`, `lib/app/`, and `lib/shared/`.
+Then run the Android app with:
+
+```bash
+flutter run
+```
