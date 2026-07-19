@@ -24,15 +24,33 @@ void main() {
     expect(find.text('Enter your password'), findsOneWidget);
   });
 
-  testWidgets('submits valid login form', (tester) async {
+  testWidgets('submits valid login form and opens home page', (tester) async {
     await tester.pumpWidget(const SmartMovieBookingApp());
 
     await tester.enterText(find.byType(TextFormField).at(0), 'user@test.com');
     await tester.enterText(find.byType(TextFormField).at(1), 'password123');
     await tester.tap(find.text('Login'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(find.text('Login ready for backend'), findsOneWidget);
+    expect(find.text('Smart Movie Booking'), findsOneWidget);
+    expect(find.text('Ready to book your next movie?'), findsOneWidget);
+  });
+
+  testWidgets('logs out from hamburger menu', (tester) async {
+    await tester.pumpWidget(const SmartMovieBookingApp());
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'user@test.com');
+    await tester.enterText(find.byType(TextFormField).at(1), 'password123');
+    await tester.tap(find.text('Login'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Logout'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Welcome back'), findsOneWidget);
+    expect(find.text('Create new account'), findsOneWidget);
   });
 
   testWidgets('navigates from login to registration page', (tester) async {

@@ -87,8 +87,10 @@ class _LoginPageState extends State<LoginPage> {
                   if (_formKey.currentState?.validate() != true) {
                     return;
                   }
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Login ready for backend')),
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    AppRoutes.home,
+                    (route) => false,
                   );
                 },
               ),
