@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../shared/widgets/auth_page_shell.dart';
-import 'user_registration_api.dart';
+import 'auth_api.dart';
 
 typedef RegisterUser = Future<void> Function(Map<String, Object> payload);
 
@@ -14,7 +14,7 @@ class RegisterPage extends StatefulWidget {
   final RegisterUser registerUser;
 
   static Future<void> _registerWithApi(Map<String, Object> payload) {
-    return UserRegistrationApi().registerUser(payload);
+    return AuthApi().registerUser(payload);
   }
 
   @override
@@ -224,7 +224,7 @@ class _RegisterPageState extends State<RegisterPage> {
         const SnackBar(content: Text('User registered successfully')),
       );
       Navigator.pop(context);
-    } on UserRegistrationException catch (error) {
+    } on AuthApiException catch (error) {
       if (!mounted) {
         return;
       }

@@ -38,6 +38,10 @@ class AuthApi {
     });
   }
 
+  Future<void> registerUser(Map<String, Object> payload) {
+    return _post('/api/users/register', payload);
+  }
+
   Future<void> changePassword({
     required String email,
     required String currentPassword,
