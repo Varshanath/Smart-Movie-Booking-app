@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../features/auth/login_page.dart';
 import '../features/auth/register_page.dart';
+import '../features/auth/change_password_page.dart';
 import '../features/home/home_page.dart';
 import '../shared/theme/app_theme.dart';
 import 'app_routes.dart';
@@ -19,7 +20,14 @@ class SmartMovieBookingApp extends StatelessWidget {
       routes: {
         AppRoutes.login: (_) => const LoginPage(),
         AppRoutes.register: (_) => const RegisterPage(),
-        AppRoutes.home: (_) => const HomePage(),
+        AppRoutes.home: (context) {
+          final email = ModalRoute.of(context)?.settings.arguments as String?;
+          return HomePage(email: email ?? '');
+        },
+        AppRoutes.changePassword: (context) {
+          final email = ModalRoute.of(context)?.settings.arguments as String?;
+          return ChangePasswordPage(email: email ?? '');
+        },
       },
     );
   }

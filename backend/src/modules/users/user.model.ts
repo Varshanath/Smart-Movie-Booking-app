@@ -8,9 +8,12 @@ export interface User {
   moviePreference: string[];
   email: string;
   phoneNumber: string;
+  passwordHash: string;
   createdAt: Date;
   updatedAt: Date;
 }
+
+export type PublicUser = Omit<User, "passwordHash">;
 
 export interface CreateUserInput {
   name: string;
@@ -19,4 +22,16 @@ export interface CreateUserInput {
   moviePreference: string[];
   email: string;
   phoneNumber: string;
+  password: string;
+}
+
+export interface LoginUserInput {
+  email: string;
+  password: string;
+}
+
+export interface ChangePasswordInput {
+  email: string;
+  currentPassword: string;
+  newPassword: string;
 }

@@ -1,9 +1,19 @@
+import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
+
 import { ApiError } from "../../shared/utils/api-error";
-import { CreateUserInput, Gender } from "./user.model";
+import {
+  ChangePasswordInput,
+  CreateUserInput,
+  Gender,
+  LoginUserInput,
+  PublicUser,
+  User,
+} from "./user.model";
 import {
   findUserByEmail,
   findUserByPhoneNumber,
   saveUser,
+  updateUserPasswordHash,
 } from "./user.repository";
 
 const allowedGenders: Gender[] = [
@@ -26,7 +36,42 @@ export async function createUser(payload: unknown) {
     throw new ApiError(409, "Phone number is already registered");
   }
 
-  return saveUser(input);
+  const { password, ...profile } = input;
+  const user = await saveUser({
+    ...profile,
+    passwordHash: hashPassword(password),
+  });
+  return toPublicUser(user);
+}
+
+export async function loginUser(payload: unknown) {
+  const input = validateLoginUserInput(payload);
+  const user = await findUserByEmail(input.email);
+
+  if (!user || !verifyPassword(input.password, user.passwordHash)) {
+    throw new ApiError(401, "Email ID or password is incorrect");
+  }
+
+  return toPublicUser(user);
+}
+
+export async function changeUserPassword(payload: unknown) {
+  const input = validateChangePasswordInput(payload);
+  const user = await findUserByEmail(input.email);
+
+  if (!user || !verifyPassword(input.currentPassword, user.passwordHash)) {
+    throw new ApiError(401, "Current password is incorrect");
+  }
+
+  const updatedUser = await updateUserPasswordHash(
+    user.id,
+    hashPassword(input.newPassword),
+  );
+  if (!updatedUser) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return toPublicUser(updatedUser);
 }
 
 function validateCreateUserInput(payload: unknown): CreateUserInput {
@@ -39,6 +84,7 @@ function validateCreateUserInput(payload: unknown): CreateUserInput {
   const location = readRequiredString(payload, "location");
   const email = readRequiredString(payload, "email").toLowerCase();
   const phoneNumber = readRequiredString(payload, "phoneNumber");
+  const password = readPassword(payload, "password");
   const moviePreference = readMoviePreference(payload.moviePreference);
 
   if (!allowedGenders.includes(gender)) {
@@ -56,6 +102,32 @@ function validateCreateUserInput(payload: unknown): CreateUserInput {
     moviePreference,
     email,
     phoneNumber,
+    password,
+  };
+}
+
+function validateLoginUserInput(payload: unknown): LoginUserInput {
+  if (!isRecord(payload)) {
+    throw new ApiError(400, "Request body is required");
+  }
+
+  return {
+    email: readRequiredString(payload, "email").toLowerCase(),
+    password: readRequiredString(payload, "password"),
+  };
+}
+
+function validateChangePasswordInput(payload: unknown): ChangePasswordInput {
+  if (!isRecord(payload)) {
+    throw new ApiError(400, "Request body is required");
+  }
+
+  const newPassword = readPassword(payload, "newPassword");
+
+  return {
+    email: readRequiredString(payload, "email").toLowerCase(),
+    currentPassword: readRequiredString(payload, "currentPassword"),
+    newPassword,
   };
 }
 
@@ -69,6 +141,15 @@ function readRequiredString(
   }
 
   return value.trim();
+}
+
+function readPassword(payload: Record<string, unknown>, key: string): string {
+  const password = readRequiredString(payload, key);
+  if (password.length < 6) {
+    throw new ApiError(400, `${key} must be at least 6 characters`);
+  }
+
+  return password;
 }
 
 function readMoviePreference(value: unknown) {
@@ -88,4 +169,30 @@ function readMoviePreference(value: unknown) {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function toPublicUser(user: User): PublicUser {
+  const { passwordHash: _passwordHash, ...publicUser } = user;
+  return publicUser;
+}
+
+function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password: string, passwordHash: string): boolean {
+  const [salt, hash] = passwordHash.split(":");
+  if (!salt || !hash) {
+    return false;
+  }
+
+  const actualHash = Buffer.from(hash, "hex");
+  const expectedHash = scryptSync(password, salt, 64);
+
+  return (
+    actualHash.length === expectedHash.length &&
+    timingSafeEqual(actualHash, expectedHash)
+  );
 }

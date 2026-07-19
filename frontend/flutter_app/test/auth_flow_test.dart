@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_movie_booking_app/app/smart_movie_booking_app.dart';
+import 'package:smart_movie_booking_app/features/auth/auth_api.dart';
+import 'package:smart_movie_booking_app/features/auth/change_password_page.dart';
+import 'package:smart_movie_booking_app/features/auth/login_page.dart';
 import 'package:smart_movie_booking_app/features/auth/register_page.dart';
+import 'package:smart_movie_booking_app/features/home/home_page.dart';
 
 void main() {
   testWidgets('shows login page first', (tester) async {
@@ -25,19 +29,70 @@ void main() {
   });
 
   testWidgets('submits valid login form and opens home page', (tester) async {
-    await tester.pumpWidget(const SmartMovieBookingApp());
+    String? loginEmail;
+    String? loginPassword;
+    await tester.pumpWidget(
+      MaterialApp(
+        routes: {
+          '/home': (context) {
+            final email =
+                ModalRoute.of(context)?.settings.arguments as String?;
+            return Scaffold(body: Text('Home for $email'));
+          },
+        },
+        home: LoginPage(
+          loginUser: ({required email, required password}) async {
+            loginEmail = email;
+            loginPassword = password;
+          },
+        ),
+      ),
+    );
 
     await tester.enterText(find.byType(TextFormField).at(0), 'user@test.com');
     await tester.enterText(find.byType(TextFormField).at(1), 'password123');
     await tester.tap(find.text('Login'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Smart Movie Booking'), findsOneWidget);
-    expect(find.text('Ready to book your next movie?'), findsOneWidget);
+    expect(loginEmail, 'user@test.com');
+    expect(loginPassword, 'password123');
+    expect(find.text('Home for user@test.com'), findsOneWidget);
+  });
+
+  testWidgets('shows an error when login fails', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginPage(
+          loginUser: ({required email, required password}) async {
+            throw const AuthApiException('Email ID or password is incorrect');
+          },
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'missing@test.com');
+    await tester.enterText(find.byType(TextFormField).at(1), 'password123');
+    await tester.tap(find.text('Login'));
+    await tester.pump();
+
+    expect(find.text('Email ID or password is incorrect'), findsOneWidget);
   });
 
   testWidgets('logs out from hamburger menu', (tester) async {
-    await tester.pumpWidget(const SmartMovieBookingApp());
+    await tester.pumpWidget(
+      MaterialApp(
+        routes: {
+          '/': (_) => LoginPage(
+                loginUser: ({required email, required password}) async {},
+              ),
+          '/home': (context) {
+            final email =
+                ModalRoute.of(context)?.settings.arguments as String?;
+            return HomePage(email: email ?? '');
+          },
+        },
+      ),
+    );
 
     await tester.enterText(find.byType(TextFormField).at(0), 'user@test.com');
     await tester.enterText(find.byType(TextFormField).at(1), 'password123');
@@ -51,6 +106,28 @@ void main() {
 
     expect(find.text('Welcome back'), findsOneWidget);
     expect(find.text('Create new account'), findsOneWidget);
+  });
+
+  testWidgets('opens change password from hamburger menu', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        routes: {
+          '/change-password': (context) {
+            final email =
+                ModalRoute.of(context)?.settings.arguments as String?;
+            return Scaffold(body: Text('Change password for $email'));
+          },
+        },
+        home: const HomePage(email: 'user@test.com'),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Change password'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Change password for user@test.com'), findsOneWidget);
   });
 
   testWidgets('navigates from login to registration page', (tester) async {
@@ -112,6 +189,44 @@ void main() {
       'moviePreference': ['Action', 'comedy'],
       'email': 'varsha@test.com',
       'phoneNumber': '9876543210',
+      'password': 'password123',
+    });
+  });
+
+  testWidgets('submits password change form', (tester) async {
+    Map<String, String>? submittedPayload;
+    await tester.pumpWidget(
+      MaterialApp(
+        routes: {
+          '/home': (_) => const Scaffold(body: Text('Home')),
+        },
+        home: ChangePasswordPage(
+          email: 'user@test.com',
+          changePassword: ({
+            required email,
+            required currentPassword,
+            required newPassword,
+          }) async {
+            submittedPayload = {
+              'email': email,
+              'currentPassword': currentPassword,
+              'newPassword': newPassword,
+            };
+          },
+        ),
+      ),
+    );
+
+    final fields = find.byType(TextFormField);
+    await tester.enterText(fields.at(0), 'password123');
+    await tester.enterText(fields.at(1), 'newpass123');
+    await tester.tap(find.text('Save password'));
+    await tester.pumpAndSettle();
+
+    expect(submittedPayload, {
+      'email': 'user@test.com',
+      'currentPassword': 'password123',
+      'newPassword': 'newpass123',
     });
   });
 

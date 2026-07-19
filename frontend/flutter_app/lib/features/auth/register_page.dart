@@ -210,6 +210,7 @@ class _RegisterPageState extends State<RegisterPage> {
           .toList(),
       'email': _emailController.text.trim(),
       'phoneNumber': _phoneController.text.trim(),
+      'password': _passwordController.text,
     };
 
     try {

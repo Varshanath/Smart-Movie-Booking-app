@@ -2,9 +2,27 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_routes.dart';
 import '../../shared/widgets/auth_page_shell.dart';
+import 'auth_api.dart';
+
+typedef LoginUser = Future<void> Function({
+  required String email,
+  required String password,
+});
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({
+    super.key,
+    this.loginUser = _loginWithApi,
+  });
+
+  final LoginUser loginUser;
+
+  static Future<void> _loginWithApi({
+    required String email,
+    required String password,
+  }) {
+    return AuthApi().login(email: email, password: password);
+  }
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -15,6 +33,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _hidePassword = true;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -82,17 +101,8 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 icon: const Icon(Icons.login),
-                label: const Text('Login'),
-                onPressed: () {
-                  if (_formKey.currentState?.validate() != true) {
-                    return;
-                  }
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    AppRoutes.home,
-                    (route) => false,
-                  );
-                },
+                label: Text(_isSubmitting ? 'Logging in...' : 'Login'),
+                onPressed: _isSubmitting ? null : _submitLogin,
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
@@ -107,5 +117,51 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ],
     );
+  }
+
+  Future<void> _submitLogin() async {
+    if (_formKey.currentState?.validate() != true) {
+      return;
+    }
+
+    final email = _emailController.text.trim();
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      await widget.loginUser(
+        email: email,
+        password: _passwordController.text,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.home,
+        (route) => false,
+        arguments: email,
+      );
+    } on AuthApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to login right now')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
   }
 }

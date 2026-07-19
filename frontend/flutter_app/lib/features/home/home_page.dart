@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 import '../../app/app_routes.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  const HomePage({
+    required this.email,
+    super.key,
+  });
+
+  final String email;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +45,18 @@ class HomePage extends StatelessWidget {
                 ),
               ),
               ListTile(
+                leading: const Icon(Icons.password_outlined),
+                title: const Text('Change password'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(
+                    context,
+                    AppRoutes.changePassword,
+                    arguments: email,
+                  );
+                },
+              ),
+              ListTile(
                 leading: const Icon(Icons.logout),
                 title: const Text('Logout'),
                 onTap: () {
@@ -74,6 +91,16 @@ class HomePage extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                 ),
+                if (email.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    email,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.black54,
+                        ),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Text(
                   'Use the menu to manage your session.',
