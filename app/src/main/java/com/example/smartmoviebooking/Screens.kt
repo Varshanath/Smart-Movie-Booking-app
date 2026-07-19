@@ -31,9 +31,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.tooling.preview.Preview
+
+@Preview(showBackground = true)
+@Composable
+fun RegistrationScreenPreview() {
+    RegistrationScreen(onRegister = {}, onNavigateToLogin = {})
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegistrationScreen(onRegister: () -> Unit) {
+fun RegistrationScreen(onRegister: () -> Unit, onNavigateToLogin: () -> Unit) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -53,7 +62,16 @@ fun RegistrationScreen(onRegister: () -> Unit) {
     ) {
         Text("Create account", fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
-        Text("Register to continue", style = MaterialTheme.typography.bodyMedium)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Register to continue", style = MaterialTheme.typography.bodyMedium)
+            TextButton(onClick = onNavigateToLogin) {
+                Text("Login instead")
+            }
+        }
         Spacer(modifier = Modifier.height(24.dp))
 
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Full name") }, modifier = Modifier.fillMaxWidth())
@@ -108,7 +126,7 @@ fun RegistrationScreen(onRegister: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(onLogin: () -> Unit) {
+fun LoginScreen(onLogin: () -> Unit, onNavigateToRegister: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -118,7 +136,16 @@ fun LoginScreen(onLogin: () -> Unit) {
     ) {
         Text("Welcome back", fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
-        Text("Login to continue", style = MaterialTheme.typography.bodyMedium)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Login to continue", style = MaterialTheme.typography.bodyMedium)
+            TextButton(onClick = onNavigateToRegister) {
+                Text("Register")
+            }
+        }
         Spacer(modifier = Modifier.height(24.dp))
         OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(8.dp))
