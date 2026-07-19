@@ -1,48 +1,30 @@
 package com.example.smartmoviebooking
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-import androidx.compose.material3.TextButton
-import androidx.compose.ui.tooling.preview.Preview
-
-@Preview(showBackground = true)
-@Composable
-fun RegistrationScreenPreview() {
-    RegistrationScreen(onRegister = {}, onNavigateToLogin = {})
-}
+import com.example.smartmoviebooking.api.LoginRequest
+import com.example.smartmoviebooking.api.RegisterRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegistrationScreen(onRegister: () -> Unit, onNavigateToLogin: () -> Unit) {
+fun RegistrationScreen(
+    viewModel: AuthViewModel,
+    onRegisterSuccess: () -> Unit,
+    onNavigateToLogin: () -> Unit
+) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -52,6 +34,8 @@ fun RegistrationScreen(onRegister: () -> Unit, onNavigateToLogin: () -> Unit) {
     var selectedGenres by remember { mutableStateOf(setOf("Action")) }
 
     val genres = listOf("Action", "Comedy", "Drama", "Sci-Fi", "Horror", "Romance")
+    val isLoading by viewModel.isLoading
+    val error by viewModel.error
 
     Column(
         modifier = Modifier
@@ -74,11 +58,15 @@ fun RegistrationScreen(onRegister: () -> Unit, onNavigateToLogin: () -> Unit) {
         }
         Spacer(modifier = Modifier.height(24.dp))
 
+        if (error != null) {
+            Text(text = error!!, color = Color.Red, modifier = Modifier.padding(bottom = 8.dp))
+        }
+
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Full name") }, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(value = favoriteMovie, onValueChange = { favoriteMovie = it }, label = { Text("Favorite movie") }, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(8.dp))
@@ -118,17 +106,43 @@ fun RegistrationScreen(onRegister: () -> Unit, onNavigateToLogin: () -> Unit) {
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onRegister, modifier = Modifier.fillMaxWidth()) {
-            Text("Register")
+        Button(
+            onClick = {
+                viewModel.register(
+                    RegisterRequest(
+                        name = name,
+                        email = email,
+                        password = password,
+                        gender = gender.lowercase(),
+                        location = location,
+                        moviePreference = selectedGenres.toList()
+                    ),
+                    onSuccess = onRegisterSuccess
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isLoading
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+            } else {
+                Text("Register")
+            }
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(onLogin: () -> Unit, onNavigateToRegister: () -> Unit) {
+fun LoginScreen(
+    viewModel: AuthViewModel,
+    onLoginSuccess: () -> Unit,
+    onNavigateToRegister: () -> Unit
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    val isLoading by viewModel.isLoading
+    val error by viewModel.error
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -147,12 +161,27 @@ fun LoginScreen(onLogin: () -> Unit, onNavigateToRegister: () -> Unit) {
             }
         }
         Spacer(modifier = Modifier.height(24.dp))
+
+        if (error != null) {
+            Text(text = error!!, color = Color.Red, modifier = Modifier.padding(bottom = 8.dp))
+        }
+
         OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onLogin, modifier = Modifier.fillMaxWidth()) {
-            Text("Login")
+        Button(
+            onClick = {
+                viewModel.login(LoginRequest(email, password), onSuccess = onLoginSuccess)
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isLoading
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+            } else {
+                Text("Login")
+            }
         }
     }
 }

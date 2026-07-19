@@ -22,10 +22,10 @@ class AuthApi {
     }
 
     if (Platform.isAndroid) {
-      return 'http://10.0.2.2:4000';
+      return 'https://smart-movie-booking-app.onrender.com';
     }
 
-    return 'http://localhost:4000';
+    return 'https://smart-movie-booking-app.onrender.com';
   }
 
   Future<void> login({

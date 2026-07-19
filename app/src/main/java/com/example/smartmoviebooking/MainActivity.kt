@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartmoviebooking.ui.theme.SmartMovieBookingTheme
 import kotlinx.coroutines.launch
 
@@ -32,7 +33,8 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigator() {
-    var isRegistered by remember { mutableStateOf(true) } // Start with true to show Login screen first
+    val authViewModel: AuthViewModel = viewModel()
+    var isRegistered by remember { mutableStateOf(true) }
     var isLoggedIn by remember { mutableStateOf(false) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -40,13 +42,21 @@ fun AppNavigator() {
     if (!isLoggedIn) {
         if (isRegistered) {
             LoginScreen(
-                onLogin = { isLoggedIn = true },
-                onNavigateToRegister = { isRegistered = false }
+                viewModel = authViewModel,
+                onLoginSuccess = { isLoggedIn = true },
+                onNavigateToRegister = { 
+                    authViewModel.clearError()
+                    isRegistered = false 
+                }
             )
         } else {
             RegistrationScreen(
-                onRegister = { isRegistered = true },
-                onNavigateToLogin = { isRegistered = true }
+                viewModel = authViewModel,
+                onRegisterSuccess = { isRegistered = true },
+                onNavigateToLogin = { 
+                    authViewModel.clearError()
+                    isRegistered = true 
+                }
             )
         }
     } else {
