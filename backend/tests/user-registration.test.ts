@@ -1,13 +1,16 @@
 import request from "supertest";
+import { existsSync, readFileSync, rmSync } from "fs";
 
 import { createApp } from "../src/app";
 import { clearUsersForTests } from "../src/modules/users/user.repository";
+import { errorLogPath } from "../src/shared/utils/error-logger";
 
 describe("POST /api/users/register", () => {
   const app = createApp();
 
   beforeEach(() => {
     clearUsersForTests();
+    rmSync(errorLogPath, { force: true });
   });
 
   it("registers a user", async () => {
@@ -62,6 +65,19 @@ describe("POST /api/users/register", () => {
       .expect(400);
 
     expect(response.body.message).toBe("name is required");
+  });
+
+  it("writes API errors to the backend error log", async () => {
+    await request(app).post("/api/users/register").send({ name: "" }).expect(400);
+
+    expect(existsSync(errorLogPath)).toBe(true);
+
+    const logContent = readFileSync(errorLogPath, "utf8");
+    expect(logContent).toContain('"level":"error"');
+    expect(logContent).toContain('"method":"POST"');
+    expect(logContent).toContain('"path":"/api/users/register"');
+    expect(logContent).toContain('"statusCode":400');
+    expect(logContent).toContain('"message":"name is required"');
   });
 });
 
