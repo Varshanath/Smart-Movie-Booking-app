@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_movie_booking_app/app/smart_movie_booking_app.dart';
+import 'package:smart_movie_booking_app/features/auth/register_page.dart';
 
 void main() {
   testWidgets('shows login page first', (tester) async {
@@ -65,10 +66,16 @@ void main() {
   });
 
   testWidgets('submits valid registration form', (tester) async {
-    await tester.pumpWidget(const SmartMovieBookingApp());
-
-    await tester.tap(find.text('Create new account'));
-    await tester.pumpAndSettle();
+    Map<String, Object>? submittedPayload;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RegisterPage(
+          registerUser: (payload) async {
+            submittedPayload = payload;
+          },
+        ),
+      ),
+    );
 
     final fields = find.byType(TextFormField);
     await tester.enterText(fields.at(0), 'Varsha Nath');
@@ -78,9 +85,16 @@ void main() {
     await tester.enterText(fields.at(4), '9876543210');
     await tester.enterText(fields.at(5), 'password123');
     await tester.tap(find.text('Register'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(find.text('Registration ready for backend'), findsOneWidget);
+    expect(submittedPayload, {
+      'name': 'Varsha Nath',
+      'gender': 'prefer_not_to_say',
+      'location': 'Bengaluru',
+      'moviePreference': ['Action', 'comedy'],
+      'email': 'varsha@test.com',
+      'phoneNumber': '9876543210',
+    });
   });
 
   testWidgets('returns from registration page to login page', (tester) async {

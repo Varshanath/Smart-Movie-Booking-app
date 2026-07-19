@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
 
 import '../../shared/widgets/auth_page_shell.dart';
+import 'user_registration_api.dart';
+
+typedef RegisterUser = Future<void> Function(Map<String, Object> payload);
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+  const RegisterPage({
+    super.key,
+    this.registerUser = _registerWithApi,
+  });
+
+  final RegisterUser registerUser;
+
+  static Future<void> _registerWithApi(Map<String, Object> payload) {
+    return UserRegistrationApi().registerUser(payload);
+  }
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
@@ -19,6 +31,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _passwordController = TextEditingController();
   String _gender = 'prefer_not_to_say';
   bool _hidePassword = true;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -154,17 +167,8 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 icon: const Icon(Icons.person_add_alt_1),
-                label: const Text('Register'),
-                onPressed: () {
-                  if (_formKey.currentState?.validate() != true) {
-                    return;
-                  }
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Registration ready for backend'),
-                    ),
-                  );
-                },
+                label: Text(_isSubmitting ? 'Registering...' : 'Register'),
+                onPressed: _isSubmitting ? null : _submitRegistration,
               ),
               const SizedBox(height: 12),
               TextButton.icon(
@@ -186,5 +190,57 @@ class _RegisterPageState extends State<RegisterPage> {
       }
       return null;
     };
+  }
+
+  Future<void> _submitRegistration() async {
+    if (_formKey.currentState?.validate() != true) {
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    final payload = <String, Object>{
+      'name': _nameController.text.trim(),
+      'gender': _gender,
+      'location': _locationController.text.trim(),
+      'moviePreference': _moviePreferenceController.text
+          .split(',')
+          .map((preference) => preference.trim())
+          .where((preference) => preference.isNotEmpty)
+          .toList(),
+      'email': _emailController.text.trim(),
+      'phoneNumber': _phoneController.text.trim(),
+    };
+
+    try {
+      await widget.registerUser(payload);
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User registered successfully')),
+      );
+      Navigator.pop(context);
+    } on UserRegistrationException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to register user right now')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
   }
 }
