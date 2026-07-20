@@ -11,11 +11,9 @@ Android frontend and a backend API.
 |   +-- flutter_app/          # Flutter Android client
 +-- backend/                  # Backend API and services
 +-- docs/                     # Architecture and planning documents
-+-- app/                      # Existing native Android prototype
 ```
 
-The existing `app/` module is preserved as the current Android prototype. New
-Flutter development should happen inside `frontend/flutter_app/`.
+New Flutter development should happen inside `frontend/flutter_app/`.
 
 ## Frontend
 
