@@ -11,9 +11,8 @@ export async function listBookings() {
       SELECT
         id,
         user_id AS "userId",
-        movie_id AS "movieId",
-        theatre_id AS "theatreId",
-        show_time AS "showTime",
+        show_id AS "showId",
+        payment_id AS "paymentId",
         seats,
         status,
         created_at AS "createdAt",
@@ -41,16 +40,15 @@ export async function saveBooking(input: CreateBookingInput) {
     await pool.query(
       `
         INSERT INTO bookings (
-          id, user_id, movie_id, theatre_id, show_time, seats, status, created_at, updated_at
+          id, user_id, show_id, payment_id, seats, status, created_at, updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       `,
       [
         booking.id,
         booking.userId,
-        booking.movieId,
-        booking.theatreId,
-        booking.showTime,
+        booking.showId,
+        booking.paymentId,
         booking.seats,
         booking.status,
         booking.createdAt,

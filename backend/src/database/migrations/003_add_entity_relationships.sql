@@ -1,0 +1,84 @@
+CREATE TABLE IF NOT EXISTS languages (
+  id UUID PRIMARY KEY,
+  name VARCHAR(80) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS genres (
+  id UUID PRIMARY KEY,
+  name VARCHAR(80) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS actors (
+  id UUID PRIMARY KEY,
+  name VARCHAR(140) NOT NULL UNIQUE
+);
+
+ALTER TABLE movies ADD COLUMN IF NOT EXISTS language_id UUID REFERENCES languages(id);
+
+CREATE TABLE IF NOT EXISTS movie_genres (
+  movie_id UUID NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+  genre_id UUID NOT NULL REFERENCES genres(id) ON DELETE CASCADE,
+  PRIMARY KEY (movie_id, genre_id)
+);
+
+CREATE TABLE IF NOT EXISTS movie_cast (
+  movie_id UUID NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+  actor_id UUID NOT NULL REFERENCES actors(id) ON DELETE CASCADE,
+  role_name VARCHAR(140),
+  PRIMARY KEY (movie_id, actor_id)
+);
+
+CREATE TABLE IF NOT EXISTS user_preferences (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  genre_id UUID REFERENCES genres(id),
+  language_id UUID REFERENCES languages(id),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS watch_history (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  movie_id UUID NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+  watched_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS screens (
+  id UUID PRIMARY KEY,
+  theatre_id UUID NOT NULL REFERENCES theatres(id) ON DELETE CASCADE,
+  name VARCHAR(120) NOT NULL,
+  total_seats INTEGER NOT NULL CHECK (total_seats > 0),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS shows (
+  id UUID PRIMARY KEY,
+  movie_id UUID NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+  screen_id UUID NOT NULL REFERENCES screens(id) ON DELETE CASCADE,
+  start_time TIMESTAMP NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS payments (
+  id UUID PRIMARY KEY,
+  amount INTEGER NOT NULL CHECK (amount >= 0),
+  status VARCHAR(30) NOT NULL CHECK (status IN ('pending', 'paid', 'failed', 'refunded')),
+  provider_reference VARCHAR(180),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS show_id UUID REFERENCES shows(id);
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_id UUID REFERENCES payments(id);
+ALTER TABLE bookings ALTER COLUMN movie_id DROP NOT NULL;
+ALTER TABLE bookings ALTER COLUMN theatre_id DROP NOT NULL;
+ALTER TABLE bookings ALTER COLUMN show_time DROP NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_movies_language_id ON movies (language_id);
+CREATE INDEX IF NOT EXISTS idx_screens_theatre_id ON screens (theatre_id);
+CREATE INDEX IF NOT EXISTS idx_shows_movie_id ON shows (movie_id);
+CREATE INDEX IF NOT EXISTS idx_shows_screen_id ON shows (screen_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_show_id ON bookings (show_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_payment_id ON bookings (payment_id);

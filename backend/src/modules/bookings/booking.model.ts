@@ -3,9 +3,8 @@ export type BookingStatus = "confirmed" | "cancelled";
 export interface Booking {
   id: string;
   userId: string;
-  movieId: string;
-  theatreId: string;
-  showTime: string;
+  showId: string;
+  paymentId: string;
   seats: number;
   status: BookingStatus;
   createdAt: Date;
@@ -14,8 +13,7 @@ export interface Booking {
 
 export interface CreateBookingInput {
   userId: string;
-  movieId: string;
-  theatreId: string;
-  showTime: string;
+  showId: string;
+  paymentId: string;
   seats: number;
 }

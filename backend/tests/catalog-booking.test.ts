@@ -3,6 +3,8 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { clearBookingsForTests } from "../src/modules/bookings/booking.repository";
 import { clearMoviesForTests } from "../src/modules/movies/movie.repository";
+import { clearPaymentsForTests } from "../src/modules/payments/payment.repository";
+import { clearShowsForTests } from "../src/modules/shows/show.repository";
 import { clearTheatresForTests } from "../src/modules/theatres/theatre.repository";
 import { clearUsersForTests } from "../src/modules/users/user.repository";
 
@@ -11,6 +13,8 @@ describe("movie, theatre, and booking APIs", () => {
 
   beforeEach(async () => {
     await clearBookingsForTests();
+    await clearPaymentsForTests();
+    await clearShowsForTests();
     await clearMoviesForTests();
     await clearTheatresForTests();
     await clearUsersForTests();
@@ -62,18 +66,20 @@ describe("movie, theatre, and booking APIs", () => {
     expect(listResponse.body.theatres).toHaveLength(1);
   });
 
-  it("creates a booking for an existing user, movie, and theatre", async () => {
+  it("creates a booking for an existing user, show, and payment", async () => {
     const user = await registerUser();
     const movie = await createMovie();
     const theatre = await createTheatre();
+    const screen = await createScreen(theatre.id);
+    const show = await createShow(movie.id, screen.id);
+    const payment = await createPayment();
 
     const response = await request(app)
       .post("/api/bookings")
       .send({
         userId: user.id,
-        movieId: movie.id,
-        theatreId: theatre.id,
-        showTime: "2026-08-01T18:30:00.000Z",
+        showId: show.id,
+        paymentId: payment.id,
         seats: 2,
       })
       .expect(201);
@@ -81,9 +87,8 @@ describe("movie, theatre, and booking APIs", () => {
     expect(response.body.message).toBe("Booking created successfully");
     expect(response.body.booking).toMatchObject({
       userId: user.id,
-      movieId: movie.id,
-      theatreId: theatre.id,
-      showTime: "2026-08-01T18:30:00.000Z",
+      showId: show.id,
+      paymentId: payment.id,
       seats: 2,
       status: "confirmed",
     });
@@ -92,22 +97,21 @@ describe("movie, theatre, and booking APIs", () => {
     expect(listResponse.body.bookings).toHaveLength(1);
   });
 
-  it("rejects booking for an unknown movie", async () => {
+  it("rejects booking for an unknown show", async () => {
     const user = await registerUser();
-    const theatre = await createTheatre();
+    const payment = await createPayment();
 
     const response = await request(app)
       .post("/api/bookings")
       .send({
         userId: user.id,
-        movieId: "missing-movie",
-        theatreId: theatre.id,
-        showTime: "2026-08-01T18:30:00.000Z",
+        showId: "missing-show",
+        paymentId: payment.id,
         seats: 2,
       })
       .expect(404);
 
-    expect(response.body.message).toBe("Movie not found");
+    expect(response.body.message).toBe("Show not found");
   });
 
   async function registerUser() {
@@ -144,5 +148,35 @@ describe("movie, theatre, and booking APIs", () => {
     });
 
     return response.body.theatre;
+  }
+
+  async function createScreen(theatreId: string) {
+    const response = await request(app).post("/api/shows/screens").send({
+      theatreId,
+      name: "Screen 1",
+      totalSeats: 120,
+    });
+
+    return response.body.screen;
+  }
+
+  async function createShow(movieId: string, screenId: string) {
+    const response = await request(app).post("/api/shows").send({
+      movieId,
+      screenId,
+      startTime: "2026-08-01T18:30:00.000Z",
+    });
+
+    return response.body.show;
+  }
+
+  async function createPayment() {
+    const response = await request(app).post("/api/payments").send({
+      amount: 500,
+      status: "paid",
+      providerReference: "pay_test_123",
+    });
+
+    return response.body.payment;
   }
 });

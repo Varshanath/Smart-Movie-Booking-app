@@ -1,5 +1,5 @@
-import { findMovieById } from "../movies/movie.repository";
-import { findTheatreById } from "../theatres/theatre.repository";
+import { findPaymentById } from "../payments/payment.repository";
+import { findShowById } from "../shows/show.repository";
 import { findUserById } from "../users/user.repository";
 import { ApiError } from "../../shared/utils/api-error";
 import { CreateBookingInput } from "./booking.model";
@@ -12,20 +12,20 @@ export async function getBookings() {
 export async function createBooking(payload: unknown) {
   const input = validateCreateBookingInput(payload);
 
-  const [user, movie, theatre] = await Promise.all([
+  const [user, show, payment] = await Promise.all([
     findUserById(input.userId),
-    findMovieById(input.movieId),
-    findTheatreById(input.theatreId),
+    findShowById(input.showId),
+    findPaymentById(input.paymentId),
   ]);
 
   if (!user) {
     throw new ApiError(404, "User not found");
   }
-  if (!movie) {
-    throw new ApiError(404, "Movie not found");
+  if (!show) {
+    throw new ApiError(404, "Show not found");
   }
-  if (!theatre) {
-    throw new ApiError(404, "Theatre not found");
+  if (!payment) {
+    throw new ApiError(404, "Payment not found");
   }
 
   return saveBooking(input);
@@ -38,9 +38,8 @@ function validateCreateBookingInput(payload: unknown): CreateBookingInput {
 
   return {
     userId: readRequiredString(payload, "userId"),
-    movieId: readRequiredString(payload, "movieId"),
-    theatreId: readRequiredString(payload, "theatreId"),
-    showTime: readRequiredString(payload, "showTime"),
+    showId: readRequiredString(payload, "showId"),
+    paymentId: readRequiredString(payload, "paymentId"),
     seats: readPositiveNumber(payload, "seats"),
   };
 }
