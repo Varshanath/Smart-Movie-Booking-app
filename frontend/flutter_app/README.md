@@ -6,19 +6,23 @@ It currently includes:
 
 - Login page
 - Registration page
+- Change password page
+- Home page (post-login landing screen, with logout/change-password menu)
 - Material app routing
 - Shared app theme
 - Shared authentication page shell
 
-If the Android runner files are missing, run this command from this folder after
-Flutter is installed:
+The `android/` runner project is already generated and committed, so you can
+run the app directly:
+
+```bash
+flutter pub get
+flutter run
+```
+
+If you ever need to regenerate or add another platform (e.g. iOS, web), run
+from this folder:
 
 ```bash
 flutter create .
-```
-
-Then run the Android app with:
-
-```bash
-flutter run
 ```
