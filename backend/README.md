@@ -18,6 +18,18 @@ npm run dev
 
 The API runs on `http://localhost:4000` by default.
 
+## Testing
+
+```bash
+npm test
+```
+
+## Health Check
+
+```text
+GET /health
+```
+
 ## User Registration API
 
 Endpoint:
@@ -35,7 +47,8 @@ Request body:
   "location": "Bengaluru",
   "moviePreference": ["Action", "Comedy"],
   "email": "varsha@test.com",
-  "phoneNumber": "9876543210"
+  "phoneNumber": "9876543210",
+  "password": "password123"
 }
 ```
 
@@ -57,3 +70,51 @@ Success response:
   }
 }
 ```
+
+## Login API
+
+Endpoint:
+
+```text
+POST /api/users/login
+```
+
+Request body:
+
+```json
+{
+  "email": "varsha@test.com",
+  "password": "password123"
+}
+```
+
+Success response: same shape as registration's `user` object, with
+`"message": "Login successful"`.
+
+## Change Password API
+
+Endpoint:
+
+```text
+POST /api/users/change-password
+```
+
+Request body:
+
+```json
+{
+  "email": "varsha@test.com",
+  "currentPassword": "password123",
+  "newPassword": "newpassword456"
+}
+```
+
+Success response: same shape as registration's `user` object, with
+`"message": "Password changed successfully"`.
+
+## Notes
+
+- Data is stored in-memory only (`src/modules/users/user.repository.ts`) —
+  nothing persists across restarts yet, despite `database/migrations/`
+  containing a Postgres schema. See
+  [../docs/NEXT_STEPS.md](../docs/NEXT_STEPS.md).

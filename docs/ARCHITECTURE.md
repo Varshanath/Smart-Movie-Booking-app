@@ -31,3 +31,17 @@ The application is split into two primary parts:
 - `theaters`: theater locations, halls, screens, and seats.
 - `bookings`: seat locking, booking confirmation, cancellation, and history.
 - `payments`: payment session creation, callbacks, and receipts.
+
+## Current Status
+
+This is the target module layout, not yet the implementation. Today:
+
+- Only `users` is implemented — it also owns registration, login, and
+  change-password, so `auth` is currently just an empty placeholder folder
+  rather than a separate module.
+- `movies`, `theaters`, `bookings`, and `payments` are unbuilt (`.gitkeep`
+  placeholders only).
+- Persistence is in-memory, not a real database, despite a Postgres
+  migration existing under `database/migrations/`.
+
+See [NEXT_STEPS.md](NEXT_STEPS.md) for the up-to-date gap list.

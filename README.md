@@ -11,11 +11,9 @@ Android frontend and a backend API.
 |   +-- flutter_app/          # Flutter Android client
 +-- backend/                  # Backend API and services
 +-- docs/                     # Architecture and planning documents
-+-- app/                      # Existing native Android prototype
 ```
 
-The existing `app/` module is preserved as the current Android prototype. New
-Flutter development should happen inside `frontend/flutter_app/`.
+New Flutter development should happen inside `frontend/flutter_app/`.
 
 ## Frontend
 
@@ -33,15 +31,36 @@ The backend is structured around API boundaries and business modules:
 
 - `src/api/` route/controller layer
 - `src/config/` environment and application configuration
-- `src/modules/` domain modules such as auth, movies, bookings, and users
+- `src/modules/` domain modules: `users` (registration, login, change
+  password — the only module implemented so far), plus placeholder folders
+  for `auth`, `movies`, `theaters`, `bookings`, and `payments`
 - `src/shared/` cross-cutting middleware, utilities, and types
 - `tests/` backend tests
 
-## Next Step
+## Running the App
 
-When Flutter is installed, initialize the client inside `frontend/flutter_app`
-with:
+Backend (from `backend/`):
 
 ```bash
-flutter create .
+npm install
+npm run dev
 ```
+
+Runs on `http://localhost:4000`. See [backend/README.md](backend/README.md)
+for the API reference.
+
+Flutter client (from `frontend/flutter_app/`), Android runner already
+included:
+
+```bash
+flutter pub get
+flutter run
+```
+
+See [frontend/flutter_app/README.md](frontend/flutter_app/README.md) for
+more.
+
+## Known Gaps
+
+See [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md) for what's not implemented yet
+(notably: the backend has no real database).

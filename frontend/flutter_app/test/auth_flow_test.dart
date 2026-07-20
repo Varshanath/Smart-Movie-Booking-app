@@ -149,6 +149,8 @@ void main() {
 
     await tester.tap(find.text('Create new account'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Register'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Register'));
     await tester.pump();
 
@@ -179,6 +181,8 @@ void main() {
     await tester.enterText(fields.at(3), 'varsha@test.com');
     await tester.enterText(fields.at(4), '9876543210');
     await tester.enterText(fields.at(5), 'password123');
+    await tester.ensureVisible(find.text('Register'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Register'));
     await tester.pumpAndSettle();
 
@@ -234,6 +238,8 @@ void main() {
     await tester.pumpWidget(const SmartMovieBookingApp());
 
     await tester.tap(find.text('Create new account'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Back to login'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Back to login'));
     await tester.pumpAndSettle();
