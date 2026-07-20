@@ -8,8 +8,8 @@ import { errorLogPath } from "../src/shared/utils/error-logger";
 describe("POST /api/users/register", () => {
   const app = createApp();
 
-  beforeEach(() => {
-    clearUsersForTests();
+  beforeEach(async () => {
+    await clearUsersForTests();
     rmSync(errorLogPath, { force: true });
   });
 
@@ -84,8 +84,8 @@ describe("POST /api/users/register", () => {
 describe("POST /api/users/login", () => {
   const app = createApp();
 
-  beforeEach(() => {
-    clearUsersForTests();
+  beforeEach(async () => {
+    await clearUsersForTests();
   });
 
   it("logs in a registered user with the correct password", async () => {
@@ -139,8 +139,8 @@ describe("POST /api/users/login", () => {
 describe("POST /api/users/change-password", () => {
   const app = createApp();
 
-  beforeEach(() => {
-    clearUsersForTests();
+  beforeEach(async () => {
+    await clearUsersForTests();
   });
 
   it("changes the password and requires the new password after that", async () => {
