@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 
 import { bookingRoutes } from "./api/routes/booking.routes";
+import { catalogRoutes } from "./api/routes/catalog.routes";
 import { movieRoutes } from "./api/routes/movie.routes";
 import { paymentRoutes } from "./api/routes/payment.routes";
 import { showRoutes } from "./api/routes/show.routes";
@@ -20,6 +21,7 @@ export function createApp() {
   });
 
   app.use("/api/users", userRoutes);
+  app.use("/api/catalog", catalogRoutes);
   app.use("/api/movies", movieRoutes);
   app.use("/api/theatres", theatreRoutes);
   app.use("/api/shows", showRoutes);

@@ -5,6 +5,16 @@ import { CreatePaymentInput, Payment } from "./payment.model";
 
 const payments = new Map<string, Payment>();
 
+export async function listPayments() {
+  if (isPostgresEnabled && pool) {
+    const result = await pool.query(
+      `SELECT id, amount, status, provider_reference AS "providerReference", created_at AS "createdAt", updated_at AS "updatedAt" FROM payments ORDER BY created_at DESC`,
+    );
+    return result.rows as Payment[];
+  }
+  return Array.from(payments.values());
+}
+
 export async function findPaymentById(id: string) {
   if (isPostgresEnabled && pool) {
     const result = await pool.query(

@@ -2,6 +2,7 @@ import request from "supertest";
 
 import { createApp } from "../src/app";
 import { clearBookingsForTests } from "../src/modules/bookings/booking.repository";
+import { clearCatalogForTests } from "../src/modules/catalog/catalog.repository";
 import { clearMoviesForTests } from "../src/modules/movies/movie.repository";
 import { clearPaymentsForTests } from "../src/modules/payments/payment.repository";
 import { clearShowsForTests } from "../src/modules/shows/show.repository";
@@ -13,6 +14,7 @@ describe("movie, theatre, and booking APIs", () => {
 
   beforeEach(async () => {
     await clearBookingsForTests();
+    await clearCatalogForTests();
     await clearPaymentsForTests();
     await clearShowsForTests();
     await clearMoviesForTests();
@@ -66,6 +68,65 @@ describe("movie, theatre, and booking APIs", () => {
     expect(listResponse.body.theatres).toHaveLength(1);
   });
 
+  it("creates catalog entries and links movie genre and cast", async () => {
+    const movie = await createMovie();
+    const genre = await createGenre();
+    const actor = await createActor();
+
+    await request(app)
+      .post(`/api/movies/${movie.id}/genres`)
+      .send({ genreId: genre.id })
+      .expect(201);
+
+    await request(app)
+      .post(`/api/movies/${movie.id}/cast`)
+      .send({ actorId: actor.id, roleName: "Cooper" })
+      .expect(201);
+
+    const genres = await request(app)
+      .get(`/api/movies/${movie.id}/genres`)
+      .expect(200);
+    const cast = await request(app).get(`/api/movies/${movie.id}/cast`).expect(200);
+
+    expect(genres.body.genres).toContainEqual(
+      expect.objectContaining({ id: genre.id, name: "Sci-Fi" }),
+    );
+    expect(cast.body.cast).toContainEqual(
+      expect.objectContaining({ id: actor.id, name: "Matthew McConaughey", roleName: "Cooper" }),
+    );
+  });
+
+  it("creates user preferences and watch history", async () => {
+    const user = await registerUser();
+    const movie = await createMovie();
+    const genre = await createGenre();
+    const language = await createLanguage();
+
+    await request(app)
+      .post(`/api/users/${user.id}/preferences`)
+      .send({ genreId: genre.id, languageId: language.id })
+      .expect(201);
+
+    await request(app)
+      .post(`/api/users/${user.id}/watch-history`)
+      .send({ movieId: movie.id })
+      .expect(201);
+
+    const preferences = await request(app)
+      .get(`/api/users/${user.id}/preferences`)
+      .expect(200);
+    const history = await request(app)
+      .get(`/api/users/${user.id}/watch-history`)
+      .expect(200);
+
+    expect(preferences.body.preferences).toContainEqual(
+      expect.objectContaining({ userId: user.id, genreId: genre.id, languageId: language.id }),
+    );
+    expect(history.body.watchHistory).toContainEqual(
+      expect.objectContaining({ userId: user.id, movieId: movie.id }),
+    );
+  });
+
   it("creates a booking for an existing user, show, and payment", async () => {
     const user = await registerUser();
     const movie = await createMovie();
@@ -95,6 +156,34 @@ describe("movie, theatre, and booking APIs", () => {
 
     const listResponse = await request(app).get("/api/bookings").expect(200);
     expect(listResponse.body.bookings).toHaveLength(1);
+  });
+
+  it("creates a movie booking through the dedicated movie booking API", async () => {
+    const user = await registerUser();
+    const movie = await createMovie();
+    const theatre = await createTheatre();
+    const screen = await createScreen(theatre.id);
+    const show = await createShow(movie.id, screen.id);
+    const payment = await createPayment();
+
+    const response = await request(app)
+      .post("/api/bookings/movie")
+      .send({
+        userId: user.id,
+        showId: show.id,
+        paymentId: payment.id,
+        seats: 3,
+      })
+      .expect(201);
+
+    expect(response.body.message).toBe("Movie booking created successfully");
+    expect(response.body.booking).toMatchObject({
+      userId: user.id,
+      showId: show.id,
+      paymentId: payment.id,
+      seats: 3,
+      status: "confirmed",
+    });
   });
 
   it("rejects booking for an unknown show", async () => {
@@ -138,6 +227,27 @@ describe("movie, theatre, and booking APIs", () => {
     });
 
     return response.body.movie;
+  }
+
+  async function createGenre() {
+    const response = await request(app)
+      .post("/api/catalog/genres")
+      .send({ name: "Sci-Fi" });
+    return response.body.genre;
+  }
+
+  async function createLanguage() {
+    const response = await request(app)
+      .post("/api/catalog/languages")
+      .send({ name: "English" });
+    return response.body.language;
+  }
+
+  async function createActor() {
+    const response = await request(app)
+      .post("/api/catalog/actors")
+      .send({ name: "Matthew McConaughey" });
+    return response.body.actor;
   }
 
   async function createTheatre() {

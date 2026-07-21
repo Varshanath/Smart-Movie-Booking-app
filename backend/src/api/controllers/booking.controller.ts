@@ -31,3 +31,18 @@ export async function createBookingController(
     next(error);
   }
 }
+
+export async function createMovieBookingController(
+  request: Request,
+  response: Response,
+  next: NextFunction,
+) {
+  try {
+    const booking = await createBooking(request.body);
+    response
+      .status(201)
+      .json({ message: "Movie booking created successfully", booking });
+  } catch (error) {
+    next(error);
+  }
+}

@@ -1,11 +1,15 @@
 import { ApiError } from "../../shared/utils/api-error";
 import { CreatePaymentInput, PaymentStatus } from "./payment.model";
-import { savePayment } from "./payment.repository";
+import { listPayments, savePayment } from "./payment.repository";
 
 const allowedStatuses: PaymentStatus[] = ["pending", "paid", "failed", "refunded"];
 
 export async function createPayment(payload: unknown) {
   return savePayment(validateCreatePaymentInput(payload));
+}
+
+export async function getPayments() {
+  return listPayments();
 }
 
 function validateCreatePaymentInput(payload: unknown): CreatePaymentInput {
