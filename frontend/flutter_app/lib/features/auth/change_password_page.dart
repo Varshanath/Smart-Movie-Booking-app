@@ -13,11 +13,13 @@ typedef ChangePassword = Future<void> Function({
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({
     required this.email,
+    this.userId = '',
     super.key,
     this.changePassword = _changePasswordWithApi,
   });
 
   final String email;
+  final String userId;
   final ChangePassword changePassword;
 
   static Future<void> _changePasswordWithApi({
@@ -168,7 +170,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         context,
         AppRoutes.home,
         (route) => false,
-        arguments: widget.email,
+        arguments: {'id': widget.userId, 'email': widget.email},
       );
     } on AuthApiException catch (error) {
       if (!mounted) {

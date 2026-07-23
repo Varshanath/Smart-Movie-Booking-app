@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'models.dart';
+
 class MovieBookingApi {
   MovieBookingApi({
     String? baseUrl,
@@ -24,12 +26,75 @@ class MovieBookingApi {
     return 'https://smart-movie-booking-app.onrender.com';
   }
 
-  Future<Map<String, dynamic>> get(String path) async {
+  Future<List<Movie>> getMovies() async {
+    final response = await _get('/api/movies');
+    return _list(response['movies']).map(Movie.fromJson).toList();
+  }
+
+  Future<List<Theatre>> getTheatres() async {
+    final response = await _get('/api/theatres');
+    return _list(response['theatres']).map(Theatre.fromJson).toList();
+  }
+
+  Future<List<Screen>> getScreens() async {
+    final response = await _get('/api/shows/screens');
+    return _list(response['screens']).map(Screen.fromJson).toList();
+  }
+
+  Future<List<Show>> getShows() async {
+    final response = await _get('/api/shows');
+    return _list(response['shows']).map(Show.fromJson).toList();
+  }
+
+  Future<SeatMap> getShowSeatMap(String showId) async {
+    final response = await _get('/api/shows/$showId/seats');
+    return SeatMap.fromJson(response['seatMap'] as Map<String, dynamic>);
+  }
+
+  Future<PaymentRecord> createPayment({
+    required int amount,
+    String status = 'paid',
+    String? providerReference,
+  }) async {
+    final response = await _post('/api/payments', {
+      'amount': amount,
+      'status': status,
+      if (providerReference != null) 'providerReference': providerReference,
+    });
+    return PaymentRecord.fromJson(response['payment'] as Map<String, dynamic>);
+  }
+
+  Future<BookingRecord> createBooking({
+    required String userId,
+    required String showId,
+    required String paymentId,
+    required List<String> seatNumbers,
+  }) async {
+    final response = await _post('/api/bookings/movie', {
+      'userId': userId,
+      'showId': showId,
+      'paymentId': paymentId,
+      'seatNumbers': seatNumbers,
+    });
+    return BookingRecord.fromJson(response['booking'] as Map<String, dynamic>);
+  }
+
+  Future<List<BookingRecord>> getBookings() async {
+    final response = await _get('/api/bookings');
+    return _list(response['bookings']).map(BookingRecord.fromJson).toList();
+  }
+
+  Future<List<PaymentRecord>> getPayments() async {
+    final response = await _get('/api/payments');
+    return _list(response['payments']).map(PaymentRecord.fromJson).toList();
+  }
+
+  Future<Map<String, dynamic>> _get(String path) async {
     final request = await _httpClient.getUrl(Uri.parse('$_baseUrl$path'));
     return _send(request);
   }
 
-  Future<Map<String, dynamic>> post(
+  Future<Map<String, dynamic>> _post(
     String path,
     Map<String, Object?> payload,
   ) async {
@@ -57,38 +122,6 @@ class MovieBookingApi {
     }
 
     return <String, dynamic>{};
-  }
-
-  Future<Map<String, List<Map<String, dynamic>>>> loadWorkspace({
-    required String userId,
-  }) async {
-    final responses = await Future.wait([
-      get('/api/movies'),
-      get('/api/theatres'),
-      get('/api/shows/screens'),
-      get('/api/shows'),
-      get('/api/payments'),
-      get('/api/bookings'),
-      get('/api/catalog/genres'),
-      get('/api/catalog/languages'),
-      get('/api/catalog/actors'),
-      if (userId.isNotEmpty) get('/api/users/$userId/preferences'),
-      if (userId.isNotEmpty) get('/api/users/$userId/watch-history'),
-    ]);
-
-    return {
-      'movies': _list(responses[0]['movies']),
-      'theatres': _list(responses[1]['theatres']),
-      'screens': _list(responses[2]['screens']),
-      'shows': _list(responses[3]['shows']),
-      'payments': _list(responses[4]['payments']),
-      'bookings': _list(responses[5]['bookings']),
-      'genres': _list(responses[6]['genres']),
-      'languages': _list(responses[7]['languages']),
-      'actors': _list(responses[8]['actors']),
-      'preferences': userId.isEmpty ? [] : _list(responses[9]['preferences']),
-      'watchHistory': userId.isEmpty ? [] : _list(responses[10]['watchHistory']),
-    };
   }
 
   static List<Map<String, dynamic>> _list(Object? value) {

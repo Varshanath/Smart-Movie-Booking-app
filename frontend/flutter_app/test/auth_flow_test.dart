@@ -5,8 +5,9 @@ import 'package:smart_movie_booking_app/features/auth/auth_api.dart';
 import 'package:smart_movie_booking_app/features/auth/change_password_page.dart';
 import 'package:smart_movie_booking_app/features/auth/login_page.dart';
 import 'package:smart_movie_booking_app/features/auth/register_page.dart';
-import 'package:smart_movie_booking_app/features/home/home_page.dart';
-import 'package:smart_movie_booking_app/features/home/movie_booking_api.dart';
+import 'package:smart_movie_booking_app/features/movies/models.dart';
+import 'package:smart_movie_booking_app/features/movies/movie_booking_api.dart';
+import 'package:smart_movie_booking_app/features/movies/movie_list_page.dart';
 
 void main() {
   testWidgets('shows login page first', (tester) async {
@@ -93,7 +94,7 @@ void main() {
             final email = arguments is Map<String, dynamic>
                 ? arguments['email'] as String?
                 : arguments as String?;
-            return HomePage(email: email ?? '', api: TestMovieBookingApi());
+            return MovieListPage(email: email ?? '', api: TestMovieBookingApi());
           },
         },
       ),
@@ -118,12 +119,14 @@ void main() {
       MaterialApp(
         routes: {
           '/change-password': (context) {
-            final email =
-                ModalRoute.of(context)?.settings.arguments as String?;
+            final arguments = ModalRoute.of(context)?.settings.arguments;
+            final email = arguments is Map<String, dynamic>
+                ? arguments['email'] as String?
+                : arguments as String?;
             return Scaffold(body: Text('Change password for $email'));
           },
         },
-        home: HomePage(email: 'user@test.com', api: TestMovieBookingApi()),
+        home: MovieListPage(email: 'user@test.com', api: TestMovieBookingApi()),
       ),
     );
 
@@ -255,21 +258,20 @@ void main() {
 
 class TestMovieBookingApi extends MovieBookingApi {
   @override
-  Future<Map<String, List<Map<String, dynamic>>>> loadWorkspace({
-    required String userId,
-  }) async {
-    return {
-      'movies': [],
-      'theatres': [],
-      'screens': [],
-      'shows': [],
-      'payments': [],
-      'bookings': [],
-      'genres': [],
-      'languages': [],
-      'actors': [],
-      'preferences': [],
-      'watchHistory': [],
-    };
-  }
+  Future<List<Movie>> getMovies() async => [];
+
+  @override
+  Future<List<Theatre>> getTheatres() async => [];
+
+  @override
+  Future<List<Screen>> getScreens() async => [];
+
+  @override
+  Future<List<Show>> getShows() async => [];
+
+  @override
+  Future<List<BookingRecord>> getBookings() async => [];
+
+  @override
+  Future<List<PaymentRecord>> getPayments() async => [];
 }
