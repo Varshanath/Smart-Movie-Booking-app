@@ -1,6 +1,12 @@
 import { NextFunction, Request, Response } from "express";
 
-import { createScreen, createShow, getScreens, getShows } from "../../modules/shows/show.service";
+import {
+  createScreen,
+  createShow,
+  getScreens,
+  getShows,
+  getShowSeatMap,
+} from "../../modules/shows/show.service";
 
 export async function listScreensController(_request: Request, response: Response, next: NextFunction) {
   try {
@@ -31,6 +37,15 @@ export async function createShowController(request: Request, response: Response,
   try {
     const show = await createShow(request.body);
     response.status(201).json({ message: "Show created successfully", show });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getShowSeatsController(request: Request, response: Response, next: NextFunction) {
+  try {
+    const seatMap = await getShowSeatMap(request.params.showId);
+    response.status(200).json({ seatMap });
   } catch (error) {
     next(error);
   }

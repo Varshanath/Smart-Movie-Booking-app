@@ -1,0 +1,8 @@
+ALTER TABLE screens ADD COLUMN IF NOT EXISTS rows INTEGER NOT NULL DEFAULT 8 CHECK (rows > 0);
+ALTER TABLE screens ADD COLUMN IF NOT EXISTS seats_per_row INTEGER NOT NULL DEFAULT 10 CHECK (seats_per_row > 0);
+
+ALTER TABLE shows ADD COLUMN IF NOT EXISTS price INTEGER NOT NULL DEFAULT 220 CHECK (price >= 0);
+
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS seat_numbers TEXT[] NOT NULL DEFAULT '{}';
+
+CREATE INDEX IF NOT EXISTS idx_bookings_show_id_status ON bookings (show_id, status);

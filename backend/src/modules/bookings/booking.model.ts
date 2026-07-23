@@ -5,6 +5,7 @@ export interface Booking {
   userId: string;
   showId: string;
   paymentId: string;
+  seatNumbers: string[];
   seats: number;
   status: BookingStatus;
   createdAt: Date;
@@ -15,5 +16,5 @@ export interface CreateBookingInput {
   userId: string;
   showId: string;
   paymentId: string;
-  seats: number;
+  seatNumbers: string[];
 }

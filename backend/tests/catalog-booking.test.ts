@@ -167,7 +167,7 @@ describe("movie, theatre, and booking APIs", () => {
         userId: user.id,
         showId: show.id,
         paymentId: payment.id,
-        seats: 2,
+        seatNumbers: ["A1", "A2"],
       })
       .expect(201);
 
@@ -176,12 +176,100 @@ describe("movie, theatre, and booking APIs", () => {
       userId: user.id,
       showId: show.id,
       paymentId: payment.id,
+      seatNumbers: ["A1", "A2"],
       seats: 2,
       status: "confirmed",
     });
 
     const listResponse = await request(app).get("/api/bookings").expect(200);
     expect(listResponse.body.bookings).toHaveLength(1);
+  });
+
+  it("returns the seat map for a show with booked seats marked", async () => {
+    const user = await registerUser();
+    const movie = await createMovie();
+    const theatre = await createTheatre();
+    const screen = await createScreen(theatre.id);
+    const show = await createShow(movie.id, screen.id);
+    const payment = await createPayment();
+
+    await request(app)
+      .post("/api/bookings")
+      .send({
+        userId: user.id,
+        showId: show.id,
+        paymentId: payment.id,
+        seatNumbers: ["A1", "A2"],
+      })
+      .expect(201);
+
+    const response = await request(app)
+      .get(`/api/shows/${show.id}/seats`)
+      .expect(200);
+
+    expect(response.body.seatMap).toMatchObject({
+      showId: show.id,
+      rows: 10,
+      seatsPerRow: 12,
+      price: 220,
+      bookedSeats: expect.arrayContaining(["A1", "A2"]),
+    });
+    expect(response.body.seatMap.seatLabels).toHaveLength(120);
+    expect(response.body.seatMap.seatLabels).toContain("A1");
+    expect(response.body.seatMap.seatLabels).toContain("J12");
+  });
+
+  it("rejects a booking for a seat that is already booked", async () => {
+    const user = await registerUser();
+    const movie = await createMovie();
+    const theatre = await createTheatre();
+    const screen = await createScreen(theatre.id);
+    const show = await createShow(movie.id, screen.id);
+    const payment = await createPayment();
+
+    await request(app)
+      .post("/api/bookings")
+      .send({
+        userId: user.id,
+        showId: show.id,
+        paymentId: payment.id,
+        seatNumbers: ["B5"],
+      })
+      .expect(201);
+
+    const otherPayment = await createPayment();
+    const response = await request(app)
+      .post("/api/bookings")
+      .send({
+        userId: user.id,
+        showId: show.id,
+        paymentId: otherPayment.id,
+        seatNumbers: ["B5"],
+      })
+      .expect(409);
+
+    expect(response.body.message).toBe("Seat B5 is already booked");
+  });
+
+  it("rejects a booking for a seat outside the screen layout", async () => {
+    const user = await registerUser();
+    const movie = await createMovie();
+    const theatre = await createTheatre();
+    const screen = await createScreen(theatre.id);
+    const show = await createShow(movie.id, screen.id);
+    const payment = await createPayment();
+
+    const response = await request(app)
+      .post("/api/bookings")
+      .send({
+        userId: user.id,
+        showId: show.id,
+        paymentId: payment.id,
+        seatNumbers: ["Z99"],
+      })
+      .expect(400);
+
+    expect(response.body.message).toBe("Seat Z99 does not exist on this screen");
   });
 
   it("lists screens, shows, and payments", async () => {
@@ -220,7 +308,7 @@ describe("movie, theatre, and booking APIs", () => {
         userId: user.id,
         showId: show.id,
         paymentId: payment.id,
-        seats: 3,
+        seatNumbers: ["C1", "C2", "C3"],
       })
       .expect(201);
 
@@ -229,6 +317,7 @@ describe("movie, theatre, and booking APIs", () => {
       userId: user.id,
       showId: show.id,
       paymentId: payment.id,
+      seatNumbers: ["C1", "C2", "C3"],
       seats: 3,
       status: "confirmed",
     });
@@ -244,7 +333,7 @@ describe("movie, theatre, and booking APIs", () => {
         userId: user.id,
         showId: "missing-show",
         paymentId: payment.id,
-        seats: 2,
+        seatNumbers: ["A1"],
       })
       .expect(404);
 
@@ -312,7 +401,8 @@ describe("movie, theatre, and booking APIs", () => {
     const response = await request(app).post("/api/shows/screens").send({
       theatreId,
       name: "Screen 1",
-      totalSeats: 120,
+      rows: 10,
+      seatsPerRow: 12,
     });
 
     return response.body.screen;
@@ -323,6 +413,7 @@ describe("movie, theatre, and booking APIs", () => {
       movieId,
       screenId,
       startTime: "2026-08-01T18:30:00.000Z",
+      price: 220,
     });
 
     return response.body.show;
