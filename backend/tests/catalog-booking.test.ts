@@ -22,6 +22,12 @@ describe("movie, theatre, and booking APIs", () => {
     await clearUsersForTests();
   });
 
+  it("returns the health check status", async () => {
+    const response = await request(app).get("/health").expect(200);
+
+    expect(response.body).toEqual({ status: "ok" });
+  });
+
   it("creates and lists movies", async () => {
     const response = await request(app)
       .post("/api/movies")
@@ -96,6 +102,26 @@ describe("movie, theatre, and booking APIs", () => {
     );
   });
 
+  it("lists catalog languages, genres, and actors", async () => {
+    const genre = await createGenre();
+    const language = await createLanguage();
+    const actor = await createActor();
+
+    const genres = await request(app).get("/api/catalog/genres").expect(200);
+    const languages = await request(app).get("/api/catalog/languages").expect(200);
+    const actors = await request(app).get("/api/catalog/actors").expect(200);
+
+    expect(genres.body.genres).toContainEqual(
+      expect.objectContaining({ id: genre.id, name: "Sci-Fi" }),
+    );
+    expect(languages.body.languages).toContainEqual(
+      expect.objectContaining({ id: language.id, name: "English" }),
+    );
+    expect(actors.body.actors).toContainEqual(
+      expect.objectContaining({ id: actor.id, name: "Matthew McConaughey" }),
+    );
+  });
+
   it("creates user preferences and watch history", async () => {
     const user = await registerUser();
     const movie = await createMovie();
@@ -156,6 +182,28 @@ describe("movie, theatre, and booking APIs", () => {
 
     const listResponse = await request(app).get("/api/bookings").expect(200);
     expect(listResponse.body.bookings).toHaveLength(1);
+  });
+
+  it("lists screens, shows, and payments", async () => {
+    const movie = await createMovie();
+    const theatre = await createTheatre();
+    const screen = await createScreen(theatre.id);
+    const show = await createShow(movie.id, screen.id);
+    const payment = await createPayment();
+
+    const screens = await request(app).get("/api/shows/screens").expect(200);
+    const shows = await request(app).get("/api/shows").expect(200);
+    const payments = await request(app).get("/api/payments").expect(200);
+
+    expect(screens.body.screens).toContainEqual(
+      expect.objectContaining({ id: screen.id, theatreId: theatre.id, name: "Screen 1" }),
+    );
+    expect(shows.body.shows).toContainEqual(
+      expect.objectContaining({ id: show.id, movieId: movie.id, screenId: screen.id }),
+    );
+    expect(payments.body.payments).toContainEqual(
+      expect.objectContaining({ id: payment.id, amount: 500, status: "paid" }),
+    );
   });
 
   it("creates a movie booking through the dedicated movie booking API", async () => {

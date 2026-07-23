@@ -21,7 +21,14 @@ class SmartMovieBookingApp extends StatelessWidget {
         AppRoutes.login: (_) => const LoginPage(),
         AppRoutes.register: (_) => const RegisterPage(),
         AppRoutes.home: (context) {
-          final email = ModalRoute.of(context)?.settings.arguments as String?;
+          final arguments = ModalRoute.of(context)?.settings.arguments;
+          if (arguments is Map<String, dynamic>) {
+            return HomePage(
+              userId: arguments['id'] as String? ?? '',
+              email: arguments['email'] as String? ?? '',
+            );
+          }
+          final email = arguments as String?;
           return HomePage(email: email ?? '');
         },
         AppRoutes.changePassword: (context) {

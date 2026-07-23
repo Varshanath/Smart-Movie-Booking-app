@@ -27,7 +27,6 @@ npm test
 ## Health Check
 
 ```text
-GET /health
 ```
 
 ## User Registration API
@@ -118,3 +117,4 @@ Success response: same shape as registration's `user` object, with
   nothing persists across restarts yet, despite `database/migrations/`
   containing a Postgres schema. See
   [../docs/NEXT_STEPS.md](../docs/NEXT_STEPS.md).
+GET /health

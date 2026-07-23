@@ -6,6 +6,7 @@ import 'package:smart_movie_booking_app/features/auth/change_password_page.dart'
 import 'package:smart_movie_booking_app/features/auth/login_page.dart';
 import 'package:smart_movie_booking_app/features/auth/register_page.dart';
 import 'package:smart_movie_booking_app/features/home/home_page.dart';
+import 'package:smart_movie_booking_app/features/home/movie_booking_api.dart';
 
 void main() {
   testWidgets('shows login page first', (tester) async {
@@ -35,8 +36,10 @@ void main() {
       MaterialApp(
         routes: {
           '/home': (context) {
-            final email =
-                ModalRoute.of(context)?.settings.arguments as String?;
+            final arguments = ModalRoute.of(context)?.settings.arguments;
+            final email = arguments is Map<String, dynamic>
+                ? arguments['email'] as String?
+                : arguments as String?;
             return Scaffold(body: Text('Home for $email'));
           },
         },
@@ -86,9 +89,11 @@ void main() {
                 loginUser: ({required email, required password}) async {},
               ),
           '/home': (context) {
-            final email =
-                ModalRoute.of(context)?.settings.arguments as String?;
-            return HomePage(email: email ?? '');
+            final arguments = ModalRoute.of(context)?.settings.arguments;
+            final email = arguments is Map<String, dynamic>
+                ? arguments['email'] as String?
+                : arguments as String?;
+            return HomePage(email: email ?? '', api: TestMovieBookingApi());
           },
         },
       ),
@@ -118,7 +123,7 @@ void main() {
             return Scaffold(body: Text('Change password for $email'));
           },
         },
-        home: const HomePage(email: 'user@test.com'),
+        home: HomePage(email: 'user@test.com', api: TestMovieBookingApi()),
       ),
     );
 
@@ -246,4 +251,25 @@ void main() {
 
     expect(find.text('Welcome back'), findsOneWidget);
   });
+}
+
+class TestMovieBookingApi extends MovieBookingApi {
+  @override
+  Future<Map<String, List<Map<String, dynamic>>>> loadWorkspace({
+    required String userId,
+  }) async {
+    return {
+      'movies': [],
+      'theatres': [],
+      'screens': [],
+      'shows': [],
+      'payments': [],
+      'bookings': [],
+      'genres': [],
+      'languages': [],
+      'actors': [],
+      'preferences': [],
+      'watchHistory': [],
+    };
+  }
 }

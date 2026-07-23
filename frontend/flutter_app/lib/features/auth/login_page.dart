@@ -4,7 +4,7 @@ import '../../app/app_routes.dart';
 import '../../shared/widgets/auth_page_shell.dart';
 import 'auth_api.dart';
 
-typedef LoginUser = Future<void> Function({
+typedef LoginUser = Future<dynamic> Function({
   required String email,
   required String password,
 });
@@ -129,10 +129,13 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isSubmitting = true);
 
     try {
-      await widget.loginUser(
+      final result = await widget.loginUser(
         email: email,
         password: _passwordController.text,
       );
+      final user = result is Map<String, dynamic>
+          ? result['user'] as Map<String, dynamic>?
+          : null;
 
       if (!mounted) {
         return;
@@ -142,7 +145,7 @@ class _LoginPageState extends State<LoginPage> {
         context,
         AppRoutes.home,
         (route) => false,
-        arguments: email,
+        arguments: user ?? {'email': email},
       );
     } on AuthApiException catch (error) {
       if (!mounted) {

@@ -28,7 +28,7 @@ class AuthApi {
     return 'https://smart-movie-booking-app.onrender.com';
   }
 
-  Future<void> login({
+  Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) {
@@ -38,11 +38,11 @@ class AuthApi {
     });
   }
 
-  Future<void> registerUser(Map<String, Object> payload) {
+  Future<Map<String, dynamic>> registerUser(Map<String, Object> payload) {
     return _post('/api/users/register', payload);
   }
 
-  Future<void> changePassword({
+  Future<Map<String, dynamic>> changePassword({
     required String email,
     required String currentPassword,
     required String newPassword,
@@ -54,7 +54,10 @@ class AuthApi {
     });
   }
 
-  Future<void> _post(String path, Map<String, Object> payload) async {
+  Future<Map<String, dynamic>> _post(
+    String path,
+    Map<String, Object> payload,
+  ) async {
     final request = await _httpClient.postUrl(Uri.parse('$_baseUrl$path'));
     request.headers.contentType = ContentType.json;
     request.write(jsonEncode(payload));
@@ -65,6 +68,17 @@ class AuthApi {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw AuthApiException(_readErrorMessage(body));
     }
+
+    if (body.isEmpty) {
+      return <String, dynamic>{};
+    }
+
+    final decoded = jsonDecode(body);
+    if (decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+
+    return <String, dynamic>{};
   }
 
   String _readErrorMessage(String body) {
