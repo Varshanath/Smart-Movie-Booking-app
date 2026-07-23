@@ -27,6 +27,7 @@ npm test
 ## Health Check
 
 ```text
+GET /health
 ```
 
 ## User Registration API
@@ -111,10 +112,19 @@ Request body:
 Success response: same shape as registration's `user` object, with
 `"message": "Password changed successfully"`.
 
-## Notes
+## Database
 
-- Data is stored in-memory only (`src/modules/users/user.repository.ts`) —
-  nothing persists across restarts yet, despite `database/migrations/`
-  containing a Postgres schema. See
-  [../docs/NEXT_STEPS.md](../docs/NEXT_STEPS.md).
-GET /health
+Set `DATABASE_URL` in `backend/.env` (gitignored, not committed) to a
+Postgres connection string to persist data there; migrations in
+`src/database/migrations/` run automatically on startup. Without
+`DATABASE_URL` set, the backend falls back to an in-memory store that's
+wiped on every restart — handy for quick local testing, but not durable.
+
+To populate demo data (movies/theatres/screens/shows), run the backend
+then:
+
+```bash
+npm run seed
+```
+
+See [../docs/NEXT_STEPS.md](../docs/NEXT_STEPS.md) for outstanding gaps.

@@ -4,9 +4,14 @@ import { Pool } from "pg";
 
 export const isPostgresEnabled = Boolean(process.env.DATABASE_URL);
 
+const isLocalDatabase = /localhost|127\.0\.0\.1/.test(
+  process.env.DATABASE_URL ?? "",
+);
+
 export const pool = isPostgresEnabled
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
+      ssl: isLocalDatabase ? undefined : { rejectUnauthorized: false },
     })
   : undefined;
 
@@ -19,6 +24,7 @@ export async function runMigrations() {
     process.cwd(),
     "src",
     "database",
+    "migrations",
   );
 
   const migrationFiles = readdirSync(migrationsPath)

@@ -31,9 +31,10 @@ The backend is structured around API boundaries and business modules:
 
 - `src/api/` route/controller layer
 - `src/config/` environment and application configuration
-- `src/modules/` domain modules: `users` (registration, login, change
-  password — the only module implemented so far), plus placeholder folders
-  for `auth`, `movies`, `theaters`, `bookings`, and `payments`
+- `src/modules/` domain modules: `users`, `movies`, `theatres`, `shows`
+  (screens + showtimes + seat maps), `bookings`, `payments`, and `catalog`
+  (genres/languages/actors). `auth` is a placeholder — login/register/
+  change-password logic lives in `users`.
 - `src/shared/` cross-cutting middleware, utilities, and types
 - `tests/` backend tests
 
@@ -63,4 +64,5 @@ more.
 ## Known Gaps
 
 See [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md) for what's not implemented yet
-(notably: the backend has no real database).
+(notably: no admin UI to create movies/theatres/shows — use
+`backend/src/database/seeders/seed-demo-data.ts`).
