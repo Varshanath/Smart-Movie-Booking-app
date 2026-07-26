@@ -97,6 +97,134 @@ class MovieBookingApi {
     return _list(response['payments']).map(PaymentRecord.fromJson).toList();
   }
 
+  Future<List<Review>> getMovieReviews(String movieId) async {
+    final response = await _get('/api/movies/$movieId/reviews');
+    return _list(response['reviews']).map(Review.fromJson).toList();
+  }
+
+  Future<List<Review>> getUserReviews(String userId) async {
+    final response = await _get('/api/users/$userId/reviews');
+    return _list(response['reviews']).map(Review.fromJson).toList();
+  }
+
+  Future<Review> addMovieReview({
+    required String movieId,
+    required String userId,
+    required double rating,
+    required String reviewText,
+  }) async {
+    final response = await _post('/api/movies/$movieId/reviews', {
+      'userId': userId,
+      'rating': rating,
+      'reviewText': reviewText,
+    });
+    return Review.fromJson(response['review'] as Map<String, dynamic>);
+  }
+
+  Future<List<WatchlistItem>> getWatchlist(String userId) async {
+    final response = await _get('/api/users/$userId/watchlist');
+    return _list(response['watchlist']).map(WatchlistItem.fromJson).toList();
+  }
+
+  Future<WatchlistItem> addToWatchlist({
+    required String userId,
+    required String movieId,
+  }) async {
+    final response = await _post('/api/users/$userId/watchlist', {'movieId': movieId});
+    return WatchlistItem.fromJson(response['item'] as Map<String, dynamic>);
+  }
+
+  Future<void> removeFromWatchlist({
+    required String userId,
+    required String movieId,
+  }) async {
+    await _delete('/api/users/$userId/watchlist/$movieId');
+  }
+
+  Future<List<Recommendation>> getRecommendations(String userId) async {
+    final response = await _get('/api/users/$userId/recommendations');
+    return _list(response['recommendations']).map(Recommendation.fromJson).toList();
+  }
+
+  Future<List<AppNotification>> getNotifications(String userId) async {
+    final response = await _get('/api/users/$userId/notifications');
+    return _list(response['notifications']).map(AppNotification.fromJson).toList();
+  }
+
+  Future<AppNotification> markNotificationRead({
+    required String userId,
+    required String notificationId,
+  }) async {
+    final response = await _post('/api/users/$userId/notifications/$notificationId/read', {});
+    return AppNotification.fromJson(response['notification'] as Map<String, dynamic>);
+  }
+
+  Future<List<SearchHistoryEntry>> getSearchHistory(String userId) async {
+    final response = await _get('/api/users/$userId/search-history');
+    return _list(response['searchHistory']).map(SearchHistoryEntry.fromJson).toList();
+  }
+
+  Future<SearchHistoryEntry> addSearchHistory({
+    required String userId,
+    required String query,
+  }) async {
+    final response = await _post('/api/users/$userId/search-history', {'query': query});
+    return SearchHistoryEntry.fromJson(response['entry'] as Map<String, dynamic>);
+  }
+
+  Future<List<AiChatMessage>> getAiChatHistory(String userId) async {
+    final response = await _get('/api/users/$userId/ai-chat');
+    return _list(response['messages']).map(AiChatMessage.fromJson).toList();
+  }
+
+  Future<AiChatMessage> sendAiChatMessage({
+    required String userId,
+    required String prompt,
+  }) async {
+    final response = await _post('/api/users/$userId/ai-chat', {'prompt': prompt});
+    return AiChatMessage.fromJson(response['message'] as Map<String, dynamic>);
+  }
+
+  Future<List<Coupon>> getCoupons() async {
+    final response = await _get('/api/coupons');
+    return _list(response['coupons']).map(Coupon.fromJson).toList();
+  }
+
+  Future<Coupon> getCouponByCode(String code) async {
+    final response = await _get('/api/coupons/$code');
+    return Coupon.fromJson(response['coupon'] as Map<String, dynamic>);
+  }
+
+  Future<List<ScreenSeat>> getScreenSeats(String screenId) async {
+    final response = await _get('/api/shows/screens/$screenId/seats');
+    return _list(response['seats']).map(ScreenSeat.fromJson).toList();
+  }
+
+  Future<List<MovieBookingStat>> getMostBookedMovies() async {
+    final response = await _get('/api/analytics/movies');
+    return _list(response['movies']).map(MovieBookingStat.fromJson).toList();
+  }
+
+  Future<List<TheatreBookingStat>> getMostBookedTheatres() async {
+    final response = await _get('/api/analytics/theatres');
+    return _list(response['theatres']).map(TheatreBookingStat.fromJson).toList();
+  }
+
+  Future<List<GenrePopularityStat>> getPopularGenres() async {
+    final response = await _get('/api/analytics/genres');
+    return _list(response['genres']).map(GenrePopularityStat.fromJson).toList();
+  }
+
+  Future<List<DailyRevenueStat>> getDailyRevenue() async {
+    final response = await _get('/api/analytics/revenue');
+    return _list(response['revenue']).map(DailyRevenueStat.fromJson).toList();
+  }
+
+  Future<List<ShowOccupancyStat>> getShowOccupancy() async {
+    final response = await _get('/api/analytics/occupancy');
+    return _list(response['occupancy']).map(ShowOccupancyStat.fromJson).toList();
+  }
+
   Future<Map<String, dynamic>> _get(String path) async {
     final request = await _httpClient.getUrl(Uri.parse('$_baseUrl$path'));
     return _send(request);
@@ -109,6 +237,11 @@ class MovieBookingApi {
     final request = await _httpClient.postUrl(Uri.parse('$_baseUrl$path'));
     request.headers.contentType = ContentType.json;
     request.write(jsonEncode(payload));
+    return _send(request);
+  }
+
+  Future<Map<String, dynamic>> _delete(String path) async {
+    final request = await _httpClient.deleteUrl(Uri.parse('$_baseUrl$path'));
     return _send(request);
   }
 
