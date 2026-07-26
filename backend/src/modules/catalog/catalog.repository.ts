@@ -70,6 +70,16 @@ export async function saveMovieGenre(movieId: string, genreId: string) {
   return { movieId, genreId };
 }
 
+export async function listMovieGenreLinks() {
+  if (isPostgresEnabled && pool) {
+    const result = await pool.query(
+      `SELECT movie_id AS "movieId", genre_id AS "genreId" FROM movie_genres`,
+    );
+    return result.rows as MovieGenreLink[];
+  }
+  return [...movieGenres];
+}
+
 export async function listMovieGenres(movieId: string) {
   if (isPostgresEnabled && pool) {
     const result = await pool.query(

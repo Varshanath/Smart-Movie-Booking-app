@@ -10,6 +10,10 @@ import {
   listMovieCastController,
   listMovieGenresController,
 } from "../controllers/relation.controller";
+import {
+  createMovieReviewController,
+  listMovieReviewsController,
+} from "../controllers/review.controller";
 
 export const movieRoutes = Router();
 
@@ -19,3 +23,5 @@ movieRoutes.get("/:movieId/genres", listMovieGenresController);
 movieRoutes.post("/:movieId/genres", addMovieGenreController);
 movieRoutes.get("/:movieId/cast", listMovieCastController);
 movieRoutes.post("/:movieId/cast", addMovieCastController);
+movieRoutes.get("/:movieId/reviews", listMovieReviewsController);
+movieRoutes.post("/:movieId/reviews", createMovieReviewController);

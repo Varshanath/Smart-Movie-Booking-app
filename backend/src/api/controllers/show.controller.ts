@@ -4,6 +4,7 @@ import {
   createScreen,
   createShow,
   getScreens,
+  getScreenSeats,
   getShows,
   getShowSeatMap,
 } from "../../modules/shows/show.service";
@@ -46,6 +47,15 @@ export async function getShowSeatsController(request: Request, response: Respons
   try {
     const seatMap = await getShowSeatMap(request.params.showId);
     response.status(200).json({ seatMap });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listScreenSeatsController(request: Request, response: Response, next: NextFunction) {
+  try {
+    const seats = await getScreenSeats(request.params.screenId);
+    response.status(200).json({ seats });
   } catch (error) {
     next(error);
   }

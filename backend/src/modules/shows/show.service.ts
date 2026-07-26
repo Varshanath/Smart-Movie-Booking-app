@@ -2,6 +2,7 @@ import { listBookingsByShowId } from "../bookings/booking.repository";
 import { ApiError } from "../../shared/utils/api-error";
 import { findMovieById } from "../movies/movie.repository";
 import { findTheatreById } from "../theatres/theatre.repository";
+import { listSeatsByScreenId } from "./seat.repository";
 import { CreateScreenInput, CreateShowInput, ShowSeatMap } from "./show.model";
 import {
   findScreenById,
@@ -18,6 +19,14 @@ export async function getScreens() {
 
 export async function getShows() {
   return listShows();
+}
+
+export async function getScreenSeats(screenId: string) {
+  const screen = await findScreenById(screenId);
+  if (!screen) {
+    throw new ApiError(404, "Screen not found");
+  }
+  return listSeatsByScreenId(screenId);
 }
 
 export async function createScreen(payload: unknown) {

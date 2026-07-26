@@ -1,8 +1,10 @@
 import cors from "cors";
 import express from "express";
 
+import { analyticsRoutes } from "./api/routes/analytics.routes";
 import { bookingRoutes } from "./api/routes/booking.routes";
 import { catalogRoutes } from "./api/routes/catalog.routes";
+import { couponRoutes } from "./api/routes/coupon.routes";
 import { locationRoutes } from "./api/routes/location.routes";
 import { movieRoutes } from "./api/routes/movie.routes";
 import { paymentRoutes } from "./api/routes/payment.routes";
@@ -29,6 +31,8 @@ export function createApp() {
   app.use("/api/shows", showRoutes);
   app.use("/api/payments", paymentRoutes);
   app.use("/api/bookings", bookingRoutes);
+  app.use("/api/coupons", couponRoutes);
+  app.use("/api/analytics", analyticsRoutes);
   app.use(errorHandler);
 
   return app;
