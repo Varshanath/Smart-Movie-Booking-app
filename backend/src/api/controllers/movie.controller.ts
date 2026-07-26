@@ -3,12 +3,14 @@ import { NextFunction, Request, Response } from "express";
 import { createMovie, getMovies } from "../../modules/movies/movie.service";
 
 export async function listMoviesController(
-  _request: Request,
+  request: Request,
   response: Response,
   next: NextFunction,
 ) {
   try {
-    response.status(200).json({ movies: await getMovies() });
+    const locationId =
+      typeof request.query.locationId === "string" ? request.query.locationId : undefined;
+    response.status(200).json({ movies: await getMovies(locationId) });
   } catch (error) {
     next(error);
   }

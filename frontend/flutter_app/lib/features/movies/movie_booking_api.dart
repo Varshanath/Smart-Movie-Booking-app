@@ -26,9 +26,17 @@ class MovieBookingApi {
     return 'https://smart-movie-booking-app.onrender.com';
   }
 
-  Future<List<Movie>> getMovies() async {
-    final response = await _get('/api/movies');
+  Future<List<Movie>> getMovies({String? locationId}) async {
+    final query = (locationId == null || locationId.isEmpty)
+        ? ''
+        : '?locationId=${Uri.encodeQueryComponent(locationId)}';
+    final response = await _get('/api/movies$query');
     return _list(response['movies']).map(Movie.fromJson).toList();
+  }
+
+  Future<List<MovieLocation>> getLocations() async {
+    final response = await _get('/api/locations');
+    return _list(response['locations']).map(MovieLocation.fromJson).toList();
   }
 
   Future<List<Theatre>> getTheatres() async {

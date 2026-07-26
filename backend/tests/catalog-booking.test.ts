@@ -3,6 +3,7 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { clearBookingsForTests } from "../src/modules/bookings/booking.repository";
 import { clearCatalogForTests } from "../src/modules/catalog/catalog.repository";
+import { clearLocationsForTests } from "../src/modules/locations/location.repository";
 import { clearMoviesForTests } from "../src/modules/movies/movie.repository";
 import { clearPaymentsForTests } from "../src/modules/payments/payment.repository";
 import { clearShowsForTests } from "../src/modules/shows/show.repository";
@@ -15,6 +16,7 @@ describe("movie, theatre, and booking APIs", () => {
   beforeEach(async () => {
     await clearBookingsForTests();
     await clearCatalogForTests();
+    await clearLocationsForTests();
     await clearPaymentsForTests();
     await clearShowsForTests();
     await clearMoviesForTests();
@@ -72,6 +74,45 @@ describe("movie, theatre, and booking APIs", () => {
 
     const listResponse = await request(app).get("/api/theatres").expect(200);
     expect(listResponse.body.theatres).toHaveLength(1);
+    expect(listResponse.body.theatres[0]).toHaveProperty("locationId");
+  });
+
+  it("lists locations and filters movies by location", async () => {
+    const movieInBengaluru = await createMovie();
+    const movieInMumbai = await createMovie();
+
+    const bengaluruTheatre = await createTheatre();
+    const mumbaiTheatreResponse = await request(app).post("/api/theatres").send({
+      name: "PVR Phoenix",
+      location: "Mumbai",
+      totalSeats: 150,
+    });
+    const mumbaiTheatre = mumbaiTheatreResponse.body.theatre;
+
+    const bengaluruScreen = await createScreen(bengaluruTheatre.id);
+    const mumbaiScreen = await createScreen(mumbaiTheatre.id);
+
+    await createShow(movieInBengaluru.id, bengaluruScreen.id);
+    await createShow(movieInMumbai.id, mumbaiScreen.id);
+
+    const locations = await request(app).get("/api/locations").expect(200);
+    expect(locations.body.locations).toContainEqual(
+      expect.objectContaining({ name: "Bengaluru" }),
+    );
+    expect(locations.body.locations).toContainEqual(
+      expect.objectContaining({ name: "Mumbai" }),
+    );
+
+    const bengaluruLocation = locations.body.locations.find(
+      (location: { name: string }) => location.name === "Bengaluru",
+    );
+
+    const filtered = await request(app)
+      .get(`/api/movies?locationId=${bengaluruLocation.id}`)
+      .expect(200);
+
+    expect(filtered.body.movies).toHaveLength(1);
+    expect(filtered.body.movies[0].id).toBe(movieInBengaluru.id);
   });
 
   it("creates catalog entries and links movie genre and cast", async () => {

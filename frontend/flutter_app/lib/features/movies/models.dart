@@ -35,19 +35,40 @@ class Movie {
 }
 
 class Theatre {
-  Theatre({required this.id, required this.name, required this.location});
+  Theatre({
+    required this.id,
+    required this.name,
+    required this.location,
+    required this.locationId,
+  });
 
   factory Theatre.fromJson(Map<String, dynamic> json) {
     return Theatre(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       location: json['location'] as String? ?? '',
+      locationId: json['locationId'] as String? ?? '',
     );
   }
 
   final String id;
   final String name;
   final String location;
+  final String locationId;
+}
+
+class MovieLocation {
+  MovieLocation({required this.id, required this.name});
+
+  factory MovieLocation.fromJson(Map<String, dynamic> json) {
+    return MovieLocation(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+    );
+  }
+
+  final String id;
+  final String name;
 }
 
 class Screen {

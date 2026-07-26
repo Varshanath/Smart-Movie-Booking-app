@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_routes.dart';
+import '../../core/storage/location_preference.dart';
 import '../bookings/my_bookings_page.dart';
 import 'models.dart';
 import 'movie_booking_api.dart';
@@ -23,19 +24,60 @@ class MovieListPage extends StatefulWidget {
 }
 
 class _MovieListPageState extends State<MovieListPage> {
+  // Stands in for "All cities" in the picker so it's distinguishable from
+  // the `null` that showModalBottomSheet returns when dismissed without a
+  // choice (e.g. tapping outside the sheet).
+  static const _allLocationsValue = 'all-locations';
+
   late final MovieBookingApi _api;
   var _loading = true;
   String? _error;
   var _movies = <Movie>[];
+  var _locations = <MovieLocation>[];
   var _theatres = <Theatre>[];
   var _screens = <Screen>[];
   var _shows = <Show>[];
+  String? _selectedLocationId;
+  String? _selectedLocationName;
 
   @override
   void initState() {
     super.initState();
     _api = widget.api ?? MovieBookingApi();
+    _selectedLocationId = LocationPreference.selectedLocationId;
+    _selectedLocationName = LocationPreference.selectedLocationName;
     _load();
+  }
+
+  // The movie list itself is already filtered server-side by
+  // _selectedLocationId (see _load). This only narrows which theatres'
+  // showtimes surface in the "No shows" badge and the movie detail page.
+  List<Show> get _visibleShows {
+    if (_selectedLocationId == null) return _shows;
+    return _shows.where((show) {
+      final theatre = _theatreForShow(show);
+      return theatre?.locationId == _selectedLocationId;
+    }).toList();
+  }
+
+  Screen? _screenFor(String screenId) {
+    for (final screen in _screens) {
+      if (screen.id == screenId) return screen;
+    }
+    return null;
+  }
+
+  Theatre? _theatreFor(String theatreId) {
+    for (final theatre in _theatres) {
+      if (theatre.id == theatreId) return theatre;
+    }
+    return null;
+  }
+
+  Theatre? _theatreForShow(Show show) {
+    final screen = _screenFor(show.screenId);
+    if (screen == null) return null;
+    return _theatreFor(screen.theatreId);
   }
 
   Future<void> _load() async {
@@ -46,7 +88,8 @@ class _MovieListPageState extends State<MovieListPage> {
 
     try {
       final results = await Future.wait([
-        _api.getMovies(),
+        _api.getMovies(locationId: _selectedLocationId),
+        _api.getLocations(),
         _api.getTheatres(),
         _api.getScreens(),
         _api.getShows(),
@@ -54,9 +97,16 @@ class _MovieListPageState extends State<MovieListPage> {
       if (!mounted) return;
       setState(() {
         _movies = results[0] as List<Movie>;
-        _theatres = results[1] as List<Theatre>;
-        _screens = results[2] as List<Screen>;
-        _shows = results[3] as List<Show>;
+        _locations = results[1] as List<MovieLocation>;
+        _theatres = results[2] as List<Theatre>;
+        _screens = results[3] as List<Screen>;
+        _shows = results[4] as List<Show>;
+        if (_selectedLocationId != null &&
+            !_locations.any((location) => location.id == _selectedLocationId)) {
+          _selectedLocationId = null;
+          _selectedLocationName = null;
+          LocationPreference.select(null, null);
+        }
       });
     } catch (error) {
       if (!mounted) return;
@@ -86,7 +136,110 @@ class _MovieListPageState extends State<MovieListPage> {
         ],
       ),
       drawer: _drawer(context),
-      body: SafeArea(child: _body()),
+      body: SafeArea(
+        child: Column(
+          children: [
+            if (!_loading && _error == null) _locationBar(context),
+            Expanded(child: _body()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _locationBar(BuildContext context) {
+    return InkWell(
+      onTap: _locations.isEmpty ? null : _pickLocation,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        color: Theme.of(context)
+            .colorScheme
+            .primaryContainer
+            .withValues(alpha: 0.35),
+        child: Row(
+          children: [
+            Icon(
+              Icons.location_on_outlined,
+              size: 18,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                _selectedLocationName ?? 'All cities',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+            const Icon(Icons.arrow_drop_down),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickLocation() async {
+    final locations = _locations;
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Choose your city',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                  ),
+                ),
+              ),
+              _locationTile(context, label: 'All cities', value: _allLocationsValue),
+              for (final location in locations)
+                _locationTile(context, label: location.name, value: location.id),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (!mounted || selected == null) return;
+    final newLocationId = selected == _allLocationsValue ? null : selected;
+    if (newLocationId == _selectedLocationId) return;
+
+    final newLocationName = newLocationId == null
+        ? null
+        : locations.firstWhere((location) => location.id == newLocationId).name;
+
+    setState(() {
+      _selectedLocationId = newLocationId;
+      _selectedLocationName = newLocationName;
+    });
+    LocationPreference.select(newLocationId, newLocationName);
+    _load();
+  }
+
+  Widget _locationTile(
+    BuildContext context, {
+    required String label,
+    required String value,
+  }) {
+    final isSelected = value == _allLocationsValue
+        ? _selectedLocationId == null
+        : _selectedLocationId == value;
+    return ListTile(
+      title: Text(label),
+      trailing: isSelected
+          ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+          : null,
+      onTap: () => Navigator.pop(context, value),
     );
   }
 
@@ -128,8 +281,10 @@ class _MovieListPageState extends State<MovieListPage> {
               Icon(Icons.movie_filter_outlined,
                   size: 48, color: Theme.of(context).colorScheme.primary),
               const SizedBox(height: 12),
-              const Text(
-                'No movies are showing right now.\nCheck back soon.',
+              Text(
+                _selectedLocationName == null
+                    ? 'No movies are showing right now.\nCheck back soon.'
+                    : 'No movies are showing in $_selectedLocationName right now.\nTry another city.',
                 textAlign: TextAlign.center,
               ),
             ],
@@ -155,7 +310,7 @@ class _MovieListPageState extends State<MovieListPage> {
   }
 
   Widget _movieCard(Movie movie) {
-    final showsForMovie = _shows.where((show) => show.movieId == movie.id).toList()
+    final showsForMovie = _visibleShows.where((show) => show.movieId == movie.id).toList()
       ..sort((a, b) => a.startTime.compareTo(b.startTime));
 
     return InkWell(

@@ -1,9 +1,32 @@
 import { ApiError } from "../../shared/utils/api-error";
+import { listScreens, listShows } from "../shows/show.repository";
+import { listTheatres } from "../theatres/theatre.repository";
 import { CreateMovieInput } from "./movie.model";
 import { listMovies, saveMovie } from "./movie.repository";
 
-export async function getMovies() {
-  return listMovies();
+export async function getMovies(locationId?: string) {
+  const movies = await listMovies();
+  if (!locationId) {
+    return movies;
+  }
+
+  const [theatres, screens, shows] = await Promise.all([
+    listTheatres(),
+    listScreens(),
+    listShows(),
+  ]);
+
+  const theatreIdsInLocation = new Set(
+    theatres.filter((theatre) => theatre.locationId === locationId).map((theatre) => theatre.id),
+  );
+  const screenTheatreId = new Map(screens.map((screen) => [screen.id, screen.theatreId]));
+  const movieIdsInLocation = new Set(
+    shows
+      .filter((show) => theatreIdsInLocation.has(screenTheatreId.get(show.screenId) ?? ""))
+      .map((show) => show.movieId),
+  );
+
+  return movies.filter((movie) => movieIdsInLocation.has(movie.id));
 }
 
 export async function createMovie(payload: unknown) {

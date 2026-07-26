@@ -258,7 +258,10 @@ void main() {
 
 class TestMovieBookingApi extends MovieBookingApi {
   @override
-  Future<List<Movie>> getMovies() async => [];
+  Future<List<Movie>> getMovies({String? locationId}) async => [];
+
+  @override
+  Future<List<MovieLocation>> getLocations() async => [];
 
   @override
   Future<List<Theatre>> getTheatres() async => [];
