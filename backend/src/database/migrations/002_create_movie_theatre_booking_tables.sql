@@ -33,7 +33,19 @@ CREATE TABLE IF NOT EXISTS bookings (
 );
 
 CREATE INDEX IF NOT EXISTS idx_movies_genre ON movies (genre);
-CREATE INDEX IF NOT EXISTS idx_theatres_location ON theatres (location);
+
+-- Guarded because migration 005 later drops theatres.location; migrations
+-- re-run in full on every boot, so this must stay safe after that happens.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'theatres' AND column_name = 'location'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_theatres_location ON theatres (location);
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings (user_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_movie_id ON bookings (movie_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_theatre_id ON bookings (theatre_id);
