@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../shared/theme/app_theme.dart';
 import '../movies/models.dart';
 import '../movies/movie_booking_api.dart';
 
@@ -167,11 +168,15 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
 
   Widget _ticketCard(_Ticket ticket) {
     final cancelled = ticket.booking.status == 'cancelled';
+    const cancelledColor = Color(0xFFEF4444);
+    const cancelledBg = Color(0xFF2A1414);
+    const confirmedBg = Color(0xFF1A3829);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFE4DDD7)),
+        color: AppTheme.surface,
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Padding(
@@ -191,9 +196,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: cancelled
-                        ? Colors.red.shade50
-                        : Colors.green.shade50,
+                    color: cancelled ? cancelledBg : confirmedBg,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -201,7 +204,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: cancelled ? Colors.red : Colors.green.shade700,
+                      color: cancelled ? cancelledColor : AppTheme.success,
                     ),
                   ),
                 ),
@@ -221,7 +224,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
             const SizedBox(height: 4),
             Text(
               'Booking ID: ${ticket.booking.id.substring(0, 8)}',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              style: const TextStyle(fontSize: 11, color: AppTheme.mutedText),
             ),
           ],
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../shared/theme/app_theme.dart';
 import '../booking/seat_selection_page.dart';
 import 'models.dart';
 import 'movie_booking_api.dart';
@@ -75,7 +76,7 @@ class MovieDetailPage extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF7B1FA2), Color(0xFFB3261E)],
+              colors: [Color(0xFFFF4D6A), Color(0xFF8C66F2)],
             ),
           ),
           child: const Center(
@@ -108,7 +109,7 @@ class MovieDetailPage extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 'Released ${movie.releaseDate}',
-                style: TextStyle(color: Colors.grey.shade600),
+                style: const TextStyle(color: AppTheme.mutedText),
               ),
             ],
           ),
@@ -121,15 +122,16 @@ class MovieDetailPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE4DDD7)),
+        color: AppTheme.surface,
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14),
+          Icon(icon, size: 14, color: Colors.white),
           const SizedBox(width: 4),
-          Text(label, style: const TextStyle(fontSize: 12)),
+          Text(label, style: const TextStyle(fontSize: 12, color: Colors.white)),
         ],
       ),
     );
@@ -165,7 +167,7 @@ class MovieDetailPage extends StatelessWidget {
               padding: const EdgeInsets.only(left: 24, top: 2, bottom: 8),
               child: Text(
                 theatre.location,
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                style: const TextStyle(color: AppTheme.mutedText, fontSize: 12),
               ),
             ),
           Wrap(

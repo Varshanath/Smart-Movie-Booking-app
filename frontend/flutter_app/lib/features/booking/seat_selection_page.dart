@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../shared/theme/app_theme.dart';
 import '../bookings/my_bookings_page.dart';
 import '../movies/models.dart';
 import '../movies/movie_booking_api.dart';
@@ -215,15 +216,19 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
 
     Color color;
     Color iconColor;
+    Color borderColor;
     if (booked) {
-      color = Colors.grey.shade300;
-      iconColor = Colors.grey.shade500;
+      color = AppTheme.border;
+      iconColor = AppTheme.mutedText;
+      borderColor = AppTheme.border;
     } else if (selected) {
       color = Theme.of(context).colorScheme.primary;
       iconColor = Colors.white;
+      borderColor = Theme.of(context).colorScheme.primary;
     } else {
-      color = Colors.white;
-      iconColor = Theme.of(context).colorScheme.primary;
+      color = AppTheme.surface;
+      iconColor = AppTheme.mutedText;
+      borderColor = AppTheme.border;
     }
 
     return Padding(
@@ -237,11 +242,7 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: selected
-                  ? Theme.of(context).colorScheme.primary
-                  : const Color(0xFFE4DDD7),
-            ),
+            border: Border.all(color: borderColor),
           ),
           child: Icon(Icons.event_seat, size: 16, color: iconColor),
         ),
@@ -268,9 +269,9 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
       spacing: 16,
       alignment: WrapAlignment.center,
       children: [
-        _legendItem(Colors.white, 'Available'),
+        _legendItem(AppTheme.surface, 'Available'),
         _legendItem(Theme.of(context).colorScheme.primary, 'Selected'),
-        _legendItem(Colors.grey.shade300, 'Booked'),
+        _legendItem(AppTheme.border, 'Booked'),
       ],
     );
   }
@@ -285,11 +286,14 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: const Color(0xFFE4DDD7)),
+            border: Border.all(color: AppTheme.border),
           ),
         ),
         const SizedBox(width: 4),
-        Text(label, style: const TextStyle(fontSize: 12)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: AppTheme.mutedText),
+        ),
       ],
     );
   }
@@ -299,15 +303,9 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 8,
-              offset: const Offset(0, -2),
-            ),
-          ],
+        decoration: const BoxDecoration(
+          color: AppTheme.surface,
+          border: Border(top: BorderSide(color: AppTheme.border)),
         ),
         child: Row(
           children: [
@@ -324,7 +322,7 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
                   if (_selectedSeats.isNotEmpty)
                     Text(
                       'Rs. $total',
-                      style: TextStyle(color: Colors.grey.shade600),
+                      style: const TextStyle(color: AppTheme.mutedText),
                     ),
                 ],
               ),
@@ -430,7 +428,7 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
       builder: (dialogContext) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.green),
+            Icon(Icons.check_circle, color: AppTheme.success),
             SizedBox(width: 8),
             Text('Booking confirmed'),
           ],
@@ -448,7 +446,7 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
             const SizedBox(height: 8),
             Text(
               'Booking ID: ${booking.id.substring(0, 8)}',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              style: const TextStyle(color: AppTheme.mutedText, fontSize: 12),
             ),
           ],
         ),

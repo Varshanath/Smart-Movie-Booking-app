@@ -392,7 +392,10 @@ class _MovieListPageState extends State<MovieListPage> {
             '${movie.language} - ${movie.durationLabel}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -418,11 +421,11 @@ class _MovieListPageState extends State<MovieListPage> {
 
   List<Color> _posterColors(String genre) {
     const palette = [
-      [Color(0xFF7B1FA2), Color(0xFFB3261E)],
-      [Color(0xFF1565C0), Color(0xFF00838F)],
-      [Color(0xFF2E7D32), Color(0xFF9E9D24)],
-      [Color(0xFFAD1457), Color(0xFFE65100)],
-      [Color(0xFF37474F), Color(0xFF546E7A)],
+      [Color(0xFFFF4D6A), Color(0xFF8C66F2)],
+      [Color(0xFF8C66F2), Color(0xFF161925)],
+      [Color(0xFFFFC145), Color(0xFFFF4D6A)],
+      [Color(0xFF4ADE80), Color(0xFF161925)],
+      [Color(0xFF161925), Color(0xFFFF4D6A)],
     ];
     final index = genre.hashCode.abs() % palette.length;
     return palette[index];

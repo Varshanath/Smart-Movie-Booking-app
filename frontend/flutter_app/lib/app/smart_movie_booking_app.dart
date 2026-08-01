@@ -15,7 +15,7 @@ class SmartMovieBookingApp extends StatelessWidget {
     return MaterialApp(
       title: 'Smart Movie Booking',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
+      theme: AppTheme.dark,
       initialRoute: AppRoutes.login,
       routes: {
         AppRoutes.login: (_) => const LoginPage(),
