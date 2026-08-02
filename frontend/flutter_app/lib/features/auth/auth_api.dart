@@ -42,6 +42,17 @@ class AuthApi {
     return _post('/api/users/register', payload);
   }
 
+  Future<Map<String, dynamic>> updateProfile({
+    required String userId,
+    required String location,
+    required List<String> moviePreference,
+  }) {
+    return _post('/api/users/$userId/profile', {
+      'location': location,
+      'moviePreference': moviePreference,
+    });
+  }
+
   Future<Map<String, dynamic>> changePassword({
     required String email,
     required String currentPassword,

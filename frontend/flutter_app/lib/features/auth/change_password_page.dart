@@ -14,6 +14,7 @@ class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({
     required this.email,
     this.userId = '',
+    this.location = '',
     this.moviePreference = const [],
     super.key,
     this.changePassword = _changePasswordWithApi,
@@ -21,6 +22,7 @@ class ChangePasswordPage extends StatefulWidget {
 
   final String email;
   final String userId;
+  final String location;
   final List<String> moviePreference;
   final ChangePassword changePassword;
 
@@ -175,6 +177,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         arguments: {
           'id': widget.userId,
           'email': widget.email,
+          'location': widget.location,
           'moviePreference': widget.moviePreference,
         },
       );

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../features/auth/login_page.dart';
 import '../features/auth/register_page.dart';
-import '../features/auth/change_password_page.dart';
 import '../features/movies/movie_list_page.dart';
 import '../features/social/who_is_coming_page.dart';
 import '../shared/theme/app_theme.dart';
@@ -27,6 +26,7 @@ class SmartMovieBookingApp extends StatelessWidget {
             return WhoIsComingPage(
               userId: arguments['id'] as String? ?? '',
               email: arguments['email'] as String? ?? '',
+              location: arguments['location'] as String? ?? '',
               moviePreference: _readStringList(arguments['moviePreference']),
             );
           }
@@ -39,23 +39,12 @@ class SmartMovieBookingApp extends StatelessWidget {
             return MovieListPage(
               userId: arguments['id'] as String? ?? '',
               email: arguments['email'] as String? ?? '',
+              profileLocation: arguments['location'] as String? ?? '',
               moviePreference: _readStringList(arguments['moviePreference']),
             );
           }
           final email = arguments as String?;
           return MovieListPage(email: email ?? '');
-        },
-        AppRoutes.changePassword: (context) {
-          final arguments = ModalRoute.of(context)?.settings.arguments;
-          if (arguments is Map<String, dynamic>) {
-            return ChangePasswordPage(
-              userId: arguments['id'] as String? ?? '',
-              email: arguments['email'] as String? ?? '',
-              moviePreference: _readStringList(arguments['moviePreference']),
-            );
-          }
-          final email = arguments as String?;
-          return ChangePasswordPage(email: email ?? '');
         },
       },
     );

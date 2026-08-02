@@ -201,6 +201,43 @@ export async function saveUser(input: SaveUserInput) {
   return user;
 }
 
+export async function updateUserProfile(
+  userId: string,
+  input: { location: string; moviePreference: string[] },
+) {
+  if (isPostgresEnabled && pool) {
+    const existingUser = await findUserById(userId);
+    if (!existingUser) {
+      return undefined;
+    }
+
+    const updatedAt = new Date();
+    await pool.query(
+      `
+        UPDATE users
+        SET location = $1, movie_preference = $2, updated_at = $3
+        WHERE id = $4
+      `,
+      [input.location, input.moviePreference, updatedAt, userId],
+    );
+    return { ...existingUser, ...input, updatedAt };
+  }
+
+  const user = users.get(userId);
+  if (!user) {
+    return undefined;
+  }
+
+  const updatedUser: User = {
+    ...user,
+    location: input.location,
+    moviePreference: input.moviePreference,
+    updatedAt: new Date(),
+  };
+  users.set(userId, updatedUser);
+  return updatedUser;
+}
+
 export async function updateUserPasswordHash(
   userId: string,
   passwordHash: string,

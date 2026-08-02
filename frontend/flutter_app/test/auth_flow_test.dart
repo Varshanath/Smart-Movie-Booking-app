@@ -115,28 +115,37 @@ void main() {
     expect(find.text('Create new account'), findsOneWidget);
   });
 
-  testWidgets('opens change password from hamburger menu', (tester) async {
+  testWidgets('opens profile settings from hamburger menu', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        routes: {
-          '/change-password': (context) {
-            final arguments = ModalRoute.of(context)?.settings.arguments;
-            final email = arguments is Map<String, dynamic>
-                ? arguments['email'] as String?
-                : arguments as String?;
-            return Scaffold(body: Text('Change password for $email'));
-          },
-        },
         home: MovieListPage(email: 'user@test.com', api: TestMovieBookingApi()),
       ),
     );
 
     await tester.tap(find.byIcon(Icons.menu));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Profile settings'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Location'), findsOneWidget);
+    expect(find.text('Movie preference'), findsOneWidget);
+  });
+
+  testWidgets('opens change password from profile settings', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MovieListPage(email: 'user@test.com', api: TestMovieBookingApi()),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Profile settings'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Change password'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Change password for user@test.com'), findsOneWidget);
+    expect(find.text('Current password'), findsOneWidget);
   });
 
   testWidgets('navigates from login to registration page', (tester) async {

@@ -5,6 +5,7 @@ import {
   createUser,
   loginUser,
   searchUsers,
+  updateUserProfile,
 } from "../../modules/users/user.service";
 
 export async function registerUser(
@@ -49,6 +50,19 @@ export async function searchUsersController(
   try {
     const users = await searchUsers(request.query.search, request.query.excludeUserId);
     response.status(200).json({ users });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateProfile(
+  request: Request,
+  response: Response,
+  next: NextFunction,
+) {
+  try {
+    const user = await updateUserProfile(request.params.userId, request.body);
+    response.status(200).json({ message: "Profile updated successfully", user });
   } catch (error) {
     next(error);
   }

@@ -15,6 +15,7 @@ import {
   saveUser,
   searchUsers as searchUsersRepository,
   updateUserPasswordHash,
+  updateUserProfile as updateUserProfileRepository,
 } from "./user.repository";
 
 const allowedGenders: Gender[] = [
@@ -64,6 +65,25 @@ export async function searchUsers(rawQuery: unknown, rawExcludeUserId: unknown) 
       : undefined;
 
   return searchUsersRepository({ query, excludeUserId, limit: 20 });
+}
+
+export async function updateUserProfile(userId: string, payload: unknown) {
+  if (!isRecord(payload)) {
+    throw new ApiError(400, "Request body is required");
+  }
+
+  const location = readRequiredString(payload, "location");
+  const moviePreference = readMoviePreference(payload.moviePreference);
+
+  const updatedUser = await updateUserProfileRepository(userId, {
+    location,
+    moviePreference,
+  });
+  if (!updatedUser) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return toPublicUser(updatedUser);
 }
 
 export async function changeUserPassword(payload: unknown) {

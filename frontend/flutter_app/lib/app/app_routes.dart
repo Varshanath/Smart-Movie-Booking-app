@@ -3,5 +3,4 @@ class AppRoutes {
   static const register = '/register';
   static const whoIsComing = '/who-is-coming';
   static const home = '/home';
-  static const changePassword = '/change-password';
 }

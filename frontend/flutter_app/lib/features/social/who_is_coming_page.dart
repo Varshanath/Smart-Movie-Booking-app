@@ -20,6 +20,7 @@ class WhoIsComingPage extends StatefulWidget {
   const WhoIsComingPage({
     required this.userId,
     required this.email,
+    this.location = '',
     this.moviePreference = const [],
     this.api,
     super.key,
@@ -27,6 +28,7 @@ class WhoIsComingPage extends StatefulWidget {
 
   final String userId;
   final String email;
+  final String location;
   final List<String> moviePreference;
   final MovieBookingApi? api;
 
@@ -106,6 +108,7 @@ class _WhoIsComingPageState extends State<WhoIsComingPage> {
       arguments: {
         'id': widget.userId,
         'email': widget.email,
+        'location': widget.location,
         'moviePreference': widget.moviePreference,
       },
     );

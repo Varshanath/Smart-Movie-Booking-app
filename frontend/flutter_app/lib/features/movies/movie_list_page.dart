@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_routes.dart';
 import '../../core/storage/location_preference.dart';
 import '../bookings/my_bookings_page.dart';
+import '../profile/profile_settings_page.dart';
 import 'models.dart';
 import 'movie_booking_api.dart';
 import 'movie_detail_page.dart';
@@ -11,6 +12,7 @@ class MovieListPage extends StatefulWidget {
   const MovieListPage({
     required this.email,
     this.userId = '',
+    this.profileLocation = '',
     this.moviePreference = const [],
     this.api,
     super.key,
@@ -18,6 +20,7 @@ class MovieListPage extends StatefulWidget {
 
   final String email;
   final String userId;
+  final String profileLocation;
   final List<String> moviePreference;
   final MovieBookingApi? api;
 
@@ -42,10 +45,11 @@ class _MovieListPageState extends State<MovieListPage> {
   String? _selectedLocationId;
   String? _selectedLocationName;
   var _forYouOnly = false;
+  late var _profileLocation = widget.profileLocation;
+  late var _moviePreference = widget.moviePreference;
 
-  late final Set<String> _preferredGenres = widget.moviePreference
-      .map((genre) => genre.toLowerCase())
-      .toSet();
+  Set<String> get _preferredGenres =>
+      _moviePreference.map((genre) => genre.toLowerCase()).toSet();
 
   List<Movie> get _filteredMovies {
     if (!_forYouOnly) return _movies;
@@ -537,19 +541,27 @@ class _MovieListPageState extends State<MovieListPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.password_outlined),
-              title: const Text('Change password'),
-              onTap: () {
+              leading: const Icon(Icons.settings_outlined),
+              title: const Text('Profile settings'),
+              onTap: () async {
                 Navigator.pop(context);
-                Navigator.pushNamed(
+                final result = await Navigator.push<Map<String, dynamic>>(
                   context,
-                  AppRoutes.changePassword,
-                  arguments: {
-                    'id': widget.userId,
-                    'email': widget.email,
-                    'moviePreference': widget.moviePreference,
-                  },
+                  MaterialPageRoute(
+                    builder: (_) => ProfileSettingsPage(
+                      userId: widget.userId,
+                      email: widget.email,
+                      location: _profileLocation,
+                      moviePreference: _moviePreference,
+                    ),
+                  ),
                 );
+                if (result == null || !mounted) return;
+                setState(() {
+                  _profileLocation = result['location'] as String? ?? _profileLocation;
+                  _moviePreference =
+                      (result['moviePreference'] as List<String>?) ?? _moviePreference;
+                });
               },
             ),
             ListTile(
