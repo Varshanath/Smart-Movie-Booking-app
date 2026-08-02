@@ -1,5 +1,6 @@
 import logging
 import uuid
+from datetime import datetime
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -8,7 +9,7 @@ from google.genai import types
 from pydantic import BaseModel
 
 from .agent import movie_recommendation_agent
-from .config import APP_NAME, HOST, PORT
+from .config import APP_NAME, HOST, INDIA_TZ, PORT
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ai-agent")
@@ -61,13 +62,24 @@ async def chat(payload: ChatRequest) -> ChatResponse:
         )
 
     # The agent needs the caller's user_id to look up preferences/watch
-    # history, but the ADK runner's user_id= param is only used for session
-    # bookkeeping — it's never exposed in the text the LLM actually sees. So
-    # it's prefixed onto the message content itself, in the fixed format
-    # agent.py's instruction tells the model to expect.
+    # history, and the real current India-time date/time to resolve relative
+    # dates ("tonight", "tomorrow") for showtime lookups — neither is
+    # otherwise visible to the LLM, so both are prefixed onto the message
+    # content itself, in the fixed format agent.py's instruction expects.
+    # This is computed fresh per request (real wall-clock time), never
+    # hardcoded.
+    now_ist = datetime.now(INDIA_TZ)
     content = types.Content(
         role="user",
-        parts=[types.Part(text=f"[user_id: {user_id}]\n{message}")],
+        parts=[
+            types.Part(
+                text=(
+                    f"[user_id: {user_id}]\n"
+                    f"[current_datetime_ist: {now_ist.isoformat()}]\n"
+                    f"{message}"
+                )
+            )
+        ],
     )
 
     response_text = ""

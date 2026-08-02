@@ -1,8 +1,14 @@
 import os
+from datetime import timedelta, timezone
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Fixed +05:30 offset, not zoneinfo("Asia/Kolkata") — avoids depending on the
+# IANA tzdata package (not bundled with Python on Windows) for a timezone
+# that never observes DST anyway, so a fixed offset is always correct.
+INDIA_TZ = timezone(timedelta(hours=5, minutes=30))
 
 # Identifies this agent app to ADK's session service (kept distinct from the
 # agent's own `name` so the two can change independently).
