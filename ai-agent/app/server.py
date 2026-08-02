@@ -60,7 +60,15 @@ async def chat(payload: ChatRequest) -> ChatResponse:
             app_name=APP_NAME, user_id=user_id, session_id=session_id
         )
 
-    content = types.Content(role="user", parts=[types.Part(text=message)])
+    # The agent needs the caller's user_id to look up preferences/watch
+    # history, but the ADK runner's user_id= param is only used for session
+    # bookkeeping — it's never exposed in the text the LLM actually sees. So
+    # it's prefixed onto the message content itself, in the fixed format
+    # agent.py's instruction tells the model to expect.
+    content = types.Content(
+        role="user",
+        parts=[types.Part(text=f"[user_id: {user_id}]\n{message}")],
+    )
 
     response_text = ""
     try:
