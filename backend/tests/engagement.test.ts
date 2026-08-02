@@ -1,7 +1,15 @@
 import request from "supertest";
 
 import { createApp } from "../src/app";
+import { callAgentService } from "../src/modules/ai-chat/ai-agent-client";
 import { clearAiChatMessagesForTests } from "../src/modules/ai-chat/ai-chat.repository";
+import { ApiError } from "../src/shared/utils/api-error";
+
+jest.mock("../src/modules/ai-chat/ai-agent-client");
+
+const mockedCallAgentService = callAgentService as jest.MockedFunction<
+  typeof callAgentService
+>;
 import { clearBookingsForTests } from "../src/modules/bookings/booking.repository";
 import { clearCatalogForTests } from "../src/modules/catalog/catalog.repository";
 import { clearCouponsForTests } from "../src/modules/coupons/coupon.repository";
@@ -21,6 +29,7 @@ describe("engagement APIs", () => {
   const app = createApp();
 
   beforeEach(async () => {
+    mockedCallAgentService.mockReset();
     await clearAiChatMessagesForTests();
     await clearBookingsForTests();
     await clearCatalogForTests();
@@ -121,7 +130,12 @@ describe("engagement APIs", () => {
     );
   });
 
-  it("sends an AI chat prompt and stores a generated response", async () => {
+  it("sends an AI chat prompt to the agent service and stores its response", async () => {
+    mockedCallAgentService.mockResolvedValueOnce({
+      sessionId: "test-session",
+      response: "Here are a few thriller picks for you.",
+    });
+
     const user = await registerUser();
 
     const response = await request(app)
@@ -129,15 +143,37 @@ describe("engagement APIs", () => {
       .send({ prompt: "Recommend a thriller." })
       .expect(201);
 
+    expect(mockedCallAgentService).toHaveBeenCalledWith(
+      user.id,
+      "Recommend a thriller.",
+      user.id,
+    );
     expect(response.body.message).toMatchObject({
       userId: user.id,
       prompt: "Recommend a thriller.",
+      response: "Here are a few thriller picks for you.",
     });
-    expect(typeof response.body.message.response).toBe("string");
-    expect(response.body.message.response.length).toBeGreaterThan(0);
 
     const history = await request(app).get(`/api/users/${user.id}/ai-chat`).expect(200);
     expect(history.body.messages).toHaveLength(1);
+  });
+
+  it("returns a clear error when the AI agent service is unavailable", async () => {
+    mockedCallAgentService.mockRejectedValueOnce(
+      new ApiError(503, "AI agent service is unavailable"),
+    );
+
+    const user = await registerUser();
+
+    const response = await request(app)
+      .post(`/api/users/${user.id}/ai-chat`)
+      .send({ prompt: "Recommend a thriller." })
+      .expect(503);
+
+    expect(response.body.message).toBe("AI agent service is unavailable");
+
+    const history = await request(app).get(`/api/users/${user.id}/ai-chat`).expect(200);
+    expect(history.body.messages).toHaveLength(0);
   });
 
   it("returns 404 for an unknown coupon code", async () => {
