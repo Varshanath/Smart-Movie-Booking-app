@@ -36,13 +36,6 @@ Widget _buildPage({List<String> moviePreference = const []}) {
   );
 }
 
-final _continueButtonFinder = find.textContaining('Continue with group of');
-
-Future<void> _scrollToContinueButton(WidgetTester tester) async {
-  await tester.drag(find.byType(ListView), const Offset(0, -600));
-  await tester.pumpAndSettle();
-}
-
 void main() {
   testWidgets('shows suggested people on load', (tester) async {
     await tester.pumpWidget(_buildPage());
@@ -52,9 +45,20 @@ void main() {
     expect(find.text('Priya Nair'), findsOneWidget);
     expect(find.text('Loves Thriller'), findsOneWidget);
     expect(find.text('Selected (0)'), findsOneWidget);
-
-    await _scrollToContinueButton(tester);
     expect(find.text('Continue with group of 0'), findsOneWidget);
+  });
+
+  testWidgets('the continue button stays visible without scrolling',
+      (tester) async {
+    await tester.pumpWidget(_buildPage());
+    await tester.pumpAndSettle();
+
+    // The button lives outside the scrollable list (a sticky bottom bar),
+    // so it must be on screen immediately, before any scrolling.
+    expect(
+      tester.getRect(find.text('Continue with group of 0')).bottom,
+      lessThanOrEqualTo(tester.view.physicalSize.height / tester.view.devicePixelRatio),
+    );
   });
 
   testWidgets('selecting a person updates the selected count and button',
@@ -66,8 +70,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Selected (1)'), findsOneWidget);
-
-    await _scrollToContinueButton(tester);
     expect(find.text('Continue with group of 1'), findsOneWidget);
   });
 
@@ -79,7 +81,6 @@ void main() {
     await tester.enterText(find.byType(TextField).at(1), '2');
     await tester.pumpAndSettle();
 
-    await _scrollToContinueButton(tester);
     expect(find.text('Continue with group of 2'), findsOneWidget);
   });
 
@@ -100,8 +101,7 @@ void main() {
     await tester.pumpWidget(_buildPage(moviePreference: const ['Action']));
     await tester.pumpAndSettle();
 
-    await _scrollToContinueButton(tester);
-    await tester.tap(_continueButtonFinder);
+    await tester.tap(find.text('Continue with group of 0'));
     await tester.pumpAndSettle();
 
     expect(find.text('Test Movie'), findsOneWidget);

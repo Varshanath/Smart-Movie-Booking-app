@@ -141,78 +141,94 @@ class _WhoIsComingPageState extends State<WhoIsComingPage> {
         api: _api,
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+        child: Column(
           children: [
-            Text("Who's coming? \u{1F39F}\u{FE0F}",
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 6),
-            const Text(
-              'Add your group so we can find seats and picks everyone likes.',
-              style: TextStyle(color: AppTheme.mutedText, fontSize: 14),
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _searchController,
-              focusNode: _searchFocusNode,
-              onChanged: _onSearchChanged,
-              decoration: const InputDecoration(
-                hintText: 'Search friends or invite by phone',
-                prefixIcon: Icon(Icons.search, color: AppTheme.mutedText),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+                children: [
+                  Text("Who's coming? \u{1F39F}\u{FE0F}",
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Add your group so we can find seats and picks everyone likes.',
+                    style: TextStyle(color: AppTheme.mutedText, fontSize: 14),
+                  ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    onChanged: _onSearchChanged,
+                    decoration: const InputDecoration(
+                      hintText: 'Search friends or invite by phone',
+                      prefixIcon: Icon(Icons.search, color: AppTheme.mutedText),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Selected (${_selected.length})',
+                    style: const TextStyle(
+                      color: AppTheme.mutedText,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _selectedRow(),
+                  const SizedBox(height: 28),
+                  const Text(
+                    'Additional guests (not on CineMatch)',
+                    style: TextStyle(
+                      color: AppTheme.mutedText,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _guestsController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: const InputDecoration(
+                      hintText: '# of extra people joining (e.g. 2)',
+                    ),
+                    onChanged: (value) {
+                      setState(() => _extraGuests = int.tryParse(value) ?? 0);
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    _searchController.text.trim().isEmpty
+                        ? 'Suggested from your contacts'
+                        : 'Search results',
+                    style: const TextStyle(
+                      color: AppTheme.mutedText,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _peopleList(),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
-            Text(
-              'Selected (${_selected.length})',
-              style: const TextStyle(
-                color: AppTheme.mutedText,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 10),
-            _selectedRow(),
-            const SizedBox(height: 28),
-            const Text(
-              'Additional guests (not on CineMatch)',
-              style: TextStyle(
-                color: AppTheme.mutedText,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _guestsController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                hintText: '# of extra people joining (e.g. 2)',
-              ),
-              onChanged: (value) {
-                setState(() => _extraGuests = int.tryParse(value) ?? 0);
-              },
-            ),
-            const SizedBox(height: 20),
-            Text(
-              _searchController.text.trim().isEmpty
-                  ? 'Suggested from your contacts'
-                  : 'Search results',
-              style: const TextStyle(
-                color: AppTheme.mutedText,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 10),
-            _peopleList(),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: _continue,
-              child: Text('Continue with group of $_totalGuests'),
-            ),
+            _continueBar(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _continueBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
+      decoration: const BoxDecoration(
+        color: AppTheme.surface,
+        border: Border(top: BorderSide(color: AppTheme.border)),
+      ),
+      child: ElevatedButton(
+        onPressed: _continue,
+        child: Text('Continue with group of $_totalGuests'),
       ),
     );
   }
