@@ -39,6 +39,20 @@ class MovieBookingApi {
     return _list(response['locations']).map(MovieLocation.fromJson).toList();
   }
 
+  Future<List<UserSummary>> searchUsers({
+    String search = '',
+    String? excludeUserId,
+  }) async {
+    final params = <String, String>{
+      if (search.isNotEmpty) 'search': search,
+      if (excludeUserId != null && excludeUserId.isNotEmpty)
+        'excludeUserId': excludeUserId,
+    };
+    final query = Uri(queryParameters: params).query;
+    final response = await _get(query.isEmpty ? '/api/users' : '/api/users?$query');
+    return _list(response['users']).map(UserSummary.fromJson).toList();
+  }
+
   Future<List<Theatre>> getTheatres() async {
     final response = await _get('/api/theatres');
     return _list(response['theatres']).map(Theatre.fromJson).toList();

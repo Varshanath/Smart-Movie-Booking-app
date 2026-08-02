@@ -13,6 +13,7 @@ import {
   findUserByEmail,
   findUserByPhoneNumber,
   saveUser,
+  searchUsers as searchUsersRepository,
   updateUserPasswordHash,
 } from "./user.repository";
 
@@ -53,6 +54,16 @@ export async function loginUser(payload: unknown) {
   }
 
   return toPublicUser(user);
+}
+
+export async function searchUsers(rawQuery: unknown, rawExcludeUserId: unknown) {
+  const query = typeof rawQuery === "string" ? rawQuery.trim() : "";
+  const excludeUserId =
+    typeof rawExcludeUserId === "string" && rawExcludeUserId.trim().length > 0
+      ? rawExcludeUserId.trim()
+      : undefined;
+
+  return searchUsersRepository({ query, excludeUserId, limit: 20 });
 }
 
 export async function changeUserPassword(payload: unknown) {

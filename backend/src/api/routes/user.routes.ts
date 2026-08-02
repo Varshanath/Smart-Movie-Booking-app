@@ -4,6 +4,7 @@ import {
   changePassword,
   login,
   registerUser,
+  searchUsersController,
 } from "../controllers/user.controller";
 import {
   addUserPreferenceController,
@@ -29,6 +30,7 @@ import {
 
 export const userRoutes = Router();
 
+userRoutes.get("/", searchUsersController);
 userRoutes.post("/register", registerUser);
 userRoutes.post("/login", login);
 userRoutes.post("/change-password", changePassword);

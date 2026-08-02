@@ -4,6 +4,7 @@ import {
   changeUserPassword,
   createUser,
   loginUser,
+  searchUsers,
 } from "../../modules/users/user.service";
 
 export async function registerUser(
@@ -35,6 +36,19 @@ export async function login(
       message: "Login successful",
       user,
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function searchUsersController(
+  request: Request,
+  response: Response,
+  next: NextFunction,
+) {
+  try {
+    const users = await searchUsers(request.query.search, request.query.excludeUserId);
+    response.status(200).json({ users });
   } catch (error) {
     next(error);
   }

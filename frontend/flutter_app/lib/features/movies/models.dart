@@ -34,6 +34,31 @@ class Movie {
   }
 }
 
+class UserSummary {
+  UserSummary({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.moviePreference,
+  });
+
+  factory UserSummary.fromJson(Map<String, dynamic> json) {
+    return UserSummary(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      moviePreference: (json['moviePreference'] as List? ?? [])
+          .map((genre) => genre.toString())
+          .toList(),
+    );
+  }
+
+  final String id;
+  final String name;
+  final String email;
+  final List<String> moviePreference;
+}
+
 class Theatre {
   Theatre({
     required this.id,

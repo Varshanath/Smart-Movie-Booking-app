@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_movie_booking_app/app/app_routes.dart';
 import 'package:smart_movie_booking_app/app/smart_movie_booking_app.dart';
 import 'package:smart_movie_booking_app/features/auth/auth_api.dart';
 import 'package:smart_movie_booking_app/features/auth/change_password_page.dart';
@@ -36,7 +37,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         routes: {
-          '/home': (context) {
+          AppRoutes.whoIsComing: (context) {
             final arguments = ModalRoute.of(context)?.settings.arguments;
             final email = arguments is Map<String, dynamic>
                 ? arguments['email'] as String?
@@ -89,7 +90,7 @@ void main() {
           '/': (_) => LoginPage(
                 loginUser: ({required email, required password}) async {},
               ),
-          '/home': (context) {
+          AppRoutes.whoIsComing: (context) {
             final arguments = ModalRoute.of(context)?.settings.arguments;
             final email = arguments is Map<String, dynamic>
                 ? arguments['email'] as String?

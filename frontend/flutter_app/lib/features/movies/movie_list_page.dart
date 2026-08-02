@@ -11,12 +11,14 @@ class MovieListPage extends StatefulWidget {
   const MovieListPage({
     required this.email,
     this.userId = '',
+    this.moviePreference = const [],
     this.api,
     super.key,
   });
 
   final String email;
   final String userId;
+  final List<String> moviePreference;
   final MovieBookingApi? api;
 
   @override
@@ -39,6 +41,18 @@ class _MovieListPageState extends State<MovieListPage> {
   var _shows = <Show>[];
   String? _selectedLocationId;
   String? _selectedLocationName;
+  var _forYouOnly = false;
+
+  late final Set<String> _preferredGenres = widget.moviePreference
+      .map((genre) => genre.toLowerCase())
+      .toSet();
+
+  List<Movie> get _filteredMovies {
+    if (!_forYouOnly) return _movies;
+    return _movies
+        .where((movie) => _preferredGenres.contains(movie.genre.toLowerCase()))
+        .toList();
+  }
 
   @override
   void initState() {
@@ -140,6 +154,8 @@ class _MovieListPageState extends State<MovieListPage> {
         child: Column(
           children: [
             if (!_loading && _error == null) _locationBar(context),
+            if (!_loading && _error == null && _preferredGenres.isNotEmpty)
+              _forYouFilterBar(context),
             Expanded(child: _body()),
           ],
         ),
@@ -175,6 +191,23 @@ class _MovieListPageState extends State<MovieListPage> {
             ),
             const Icon(Icons.arrow_drop_down),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _forYouFilterBar(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: FilterChip(
+          avatar: const Icon(Icons.favorite_outline, size: 18),
+          label: const Text('For You'),
+          selected: _forYouOnly,
+          onSelected: (selected) {
+            setState(() => _forYouOnly = selected);
+          },
         ),
       ),
     );
@@ -293,6 +326,33 @@ class _MovieListPageState extends State<MovieListPage> {
       );
     }
 
+    final movies = _filteredMovies;
+
+    if (movies.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.favorite_outline,
+                  size: 48, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(height: 12),
+              const Text(
+                "No movies match your preferences right now.",
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton(
+                onPressed: () => setState(() => _forYouOnly = false),
+                child: const Text('Show all movies'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return RefreshIndicator(
       onRefresh: _load,
       child: GridView.builder(
@@ -303,8 +363,8 @@ class _MovieListPageState extends State<MovieListPage> {
           crossAxisSpacing: 16,
           childAspectRatio: 0.62,
         ),
-        itemCount: _movies.length,
-        itemBuilder: (context, index) => _movieCard(_movies[index]),
+        itemCount: movies.length,
+        itemBuilder: (context, index) => _movieCard(movies[index]),
       ),
     );
   }
@@ -484,7 +544,11 @@ class _MovieListPageState extends State<MovieListPage> {
                 Navigator.pushNamed(
                   context,
                   AppRoutes.changePassword,
-                  arguments: {'id': widget.userId, 'email': widget.email},
+                  arguments: {
+                    'id': widget.userId,
+                    'email': widget.email,
+                    'moviePreference': widget.moviePreference,
+                  },
                 );
               },
             ),

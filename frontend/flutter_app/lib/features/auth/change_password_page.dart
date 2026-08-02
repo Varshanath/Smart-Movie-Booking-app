@@ -14,12 +14,14 @@ class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({
     required this.email,
     this.userId = '',
+    this.moviePreference = const [],
     super.key,
     this.changePassword = _changePasswordWithApi,
   });
 
   final String email;
   final String userId;
+  final List<String> moviePreference;
   final ChangePassword changePassword;
 
   static Future<void> _changePasswordWithApi({
@@ -170,7 +172,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         context,
         AppRoutes.home,
         (route) => false,
-        arguments: {'id': widget.userId, 'email': widget.email},
+        arguments: {
+          'id': widget.userId,
+          'email': widget.email,
+          'moviePreference': widget.moviePreference,
+        },
       );
     } on AuthApiException catch (error) {
       if (!mounted) {

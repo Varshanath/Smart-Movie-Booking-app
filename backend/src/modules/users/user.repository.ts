@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 
 import { isPostgresEnabled, pool } from "../../database/postgres";
-import { CreateUserInput, User } from "./user.model";
+import { CreateUserInput, PublicUser, User } from "./user.model";
 
 type SaveUserInput = Omit<CreateUserInput, "password"> & {
   passwordHash: string;
@@ -90,6 +90,69 @@ export async function findUserByPhoneNumber(phoneNumber: string) {
   return Array.from(users.values()).find(
     (user) => user.phoneNumber === phoneNumber,
   );
+}
+
+export async function searchUsers({
+  query,
+  excludeUserId,
+  limit,
+}: {
+  query: string;
+  excludeUserId?: string;
+  limit: number;
+}) {
+  if (isPostgresEnabled && pool) {
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+
+    if (query) {
+      params.push(`%${query}%`);
+      conditions.push(
+        `(name ILIKE $${params.length} OR email ILIKE $${params.length} OR phone_number ILIKE $${params.length})`,
+      );
+    }
+    if (excludeUserId) {
+      params.push(excludeUserId);
+      conditions.push(`id != $${params.length}`);
+    }
+    params.push(limit);
+    const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    const result = await pool.query(
+      `
+        SELECT
+          id,
+          name,
+          gender,
+          location,
+          movie_preference AS "moviePreference",
+          email,
+          phone_number AS "phoneNumber",
+          created_at AS "createdAt",
+          updated_at AS "updatedAt"
+        FROM users
+        ${whereClause}
+        ORDER BY name ASC
+        LIMIT $${params.length}
+      `,
+      params,
+    );
+    return result.rows as PublicUser[];
+  }
+
+  const lowerQuery = query.toLowerCase();
+  return Array.from(users.values())
+    .filter((user) => user.id !== excludeUserId)
+    .filter(
+      (user) =>
+        !lowerQuery ||
+        user.name.toLowerCase().includes(lowerQuery) ||
+        user.email.toLowerCase().includes(lowerQuery) ||
+        user.phoneNumber.includes(lowerQuery),
+    )
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, limit)
+    .map(({ passwordHash: _passwordHash, ...publicUser }) => publicUser);
 }
 
 export async function saveUser(input: SaveUserInput) {
