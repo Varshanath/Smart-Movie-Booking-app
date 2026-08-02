@@ -96,6 +96,48 @@ void main() {
     expect(find.text('Logout'), findsOneWidget);
   });
 
+  testWidgets('shows a back button that returns to the previous page when pushed',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: ElevatedButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => WhoIsComingPage(
+                    movie: _testMovie,
+                    show: _testShow,
+                    theatreName: 'Test Theatre',
+                    screenName: 'Screen 1',
+                    userId: 'me',
+                    email: 'user@test.com',
+                    api: _FakeMovieBookingApi(),
+                  ),
+                ),
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BackButton), findsOneWidget);
+    // Only one drawer/back affordance on each side — no duplicate hamburger.
+    expect(find.byIcon(Icons.menu), findsOneWidget);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Open'), findsOneWidget);
+    expect(find.text("Who's coming? \u{1F39F}\u{FE0F}"), findsNothing);
+  });
+
   testWidgets('continue pushes seat selection for the chosen showtime',
       (tester) async {
     await tester.pumpWidget(_buildPage(moviePreference: const ['Action']));

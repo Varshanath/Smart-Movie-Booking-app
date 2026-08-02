@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../shared/theme/app_theme.dart';
+import '../../shared/widgets/app_bar_actions.dart';
 import '../../shared/widgets/app_drawer.dart';
 import '../booking/seat_selection_page.dart';
 import '../movies/models.dart';
@@ -132,7 +133,11 @@ class _WhoIsComingPageState extends State<WhoIsComingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leading: backButtonLeading(context),
+        actions: [drawerMenuAction()],
+      ),
       drawer: AppDrawer(
         userId: widget.userId,
         email: widget.email,

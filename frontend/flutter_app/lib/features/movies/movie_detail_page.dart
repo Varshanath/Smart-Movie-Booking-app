@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../shared/theme/app_theme.dart';
+import '../../shared/widgets/app_bar_actions.dart';
 import '../../shared/widgets/app_drawer.dart';
 import '../social/who_is_coming_page.dart';
 import 'models.dart';
@@ -40,7 +41,12 @@ class MovieDetailPage extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(movie.title)),
+      appBar: AppBar(
+        title: Text(movie.title),
+        automaticallyImplyLeading: false,
+        leading: backButtonLeading(context),
+        actions: [drawerMenuAction()],
+      ),
       drawer: AppDrawer(
         userId: userId,
         email: email,

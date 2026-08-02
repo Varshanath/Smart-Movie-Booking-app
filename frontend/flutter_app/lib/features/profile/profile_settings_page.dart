@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_routes.dart';
 import '../../shared/theme/app_theme.dart';
+import '../../shared/widgets/app_bar_actions.dart';
 import '../../shared/widgets/app_drawer.dart';
 import '../auth/auth_api.dart';
 import '../auth/change_password_page.dart';
@@ -64,7 +65,12 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile settings')),
+      appBar: AppBar(
+        title: const Text('Profile settings'),
+        automaticallyImplyLeading: false,
+        leading: backButtonLeading(context),
+        actions: [drawerMenuAction()],
+      ),
       drawer: AppDrawer(
         userId: widget.userId,
         email: widget.email,

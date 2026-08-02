@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../shared/theme/app_theme.dart';
+import '../../shared/widgets/app_bar_actions.dart';
 import '../../shared/widgets/app_drawer.dart';
 import '../bookings/my_bookings_page.dart';
 import '../movies/models.dart';
@@ -90,6 +91,9 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
             ),
           ],
         ),
+        automaticallyImplyLeading: false,
+        leading: backButtonLeading(context),
+        actions: [drawerMenuAction()],
       ),
       drawer: AppDrawer(
         userId: widget.userId,

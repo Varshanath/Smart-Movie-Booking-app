@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../shared/theme/app_theme.dart';
+import '../../shared/widgets/app_bar_actions.dart';
 import '../../shared/widgets/app_drawer.dart';
 import '../movies/models.dart';
 import '../movies/movie_booking_api.dart';
@@ -101,12 +102,15 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Bookings'),
+        automaticallyImplyLeading: false,
+        leading: backButtonLeading(context),
         actions: [
           IconButton(
             tooltip: 'Refresh',
             icon: const Icon(Icons.refresh),
             onPressed: _loading ? null : _load,
           ),
+          drawerMenuAction(),
         ],
       ),
       drawer: AppDrawer(
