@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_routes.dart';
 import '../../shared/theme/app_theme.dart';
 import '../../shared/widgets/app_drawer.dart';
 import '../auth/auth_api.dart';
@@ -169,13 +170,17 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully')),
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.home,
+        (route) => false,
+        arguments: {
+          'id': widget.userId,
+          'email': widget.email,
+          'location': location,
+          'moviePreference': moviePreference,
+        },
       );
-      Navigator.pop(context, {
-        'location': location,
-        'moviePreference': moviePreference,
-      });
     } on AuthApiException catch (error) {
       if (!mounted) {
         return;

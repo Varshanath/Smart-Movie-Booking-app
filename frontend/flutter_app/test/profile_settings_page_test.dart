@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_movie_booking_app/app/app_routes.dart';
 import 'package:smart_movie_booking_app/features/profile/profile_settings_page.dart';
 
 void main() {
@@ -40,49 +41,38 @@ void main() {
     expect(find.text('Enter at least one movie preference'), findsOneWidget);
   });
 
-  testWidgets('saves changes and pops with the updated values', (tester) async {
+  testWidgets('saves changes and lands on Now Showing', (tester) async {
     Map<String, Object>? capturedArgs;
-    Map<String, dynamic>? poppedResult;
 
     await tester.pumpWidget(
       MaterialApp(
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: ElevatedButton(
-              onPressed: () async {
-                poppedResult = await Navigator.push<Map<String, dynamic>>(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ProfileSettingsPage(
-                      userId: 'u1',
-                      email: 'user@test.com',
-                      location: 'Bengaluru',
-                      moviePreference: const ['Action'],
-                      updateProfile: ({
-                        required userId,
-                        required location,
-                        required moviePreference,
-                      }) async {
-                        capturedArgs = {
-                          'userId': userId,
-                          'location': location,
-                          'moviePreference': moviePreference,
-                        };
-                        return <String, dynamic>{};
-                      },
-                    ),
-                  ),
-                );
-              },
-              child: const Text('Open'),
-            ),
-          ),
+        routes: {
+          AppRoutes.home: (context) {
+            final arguments =
+                ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+            return Scaffold(body: Text('Home for ${arguments['email']}'));
+          },
+        },
+        home: ProfileSettingsPage(
+          userId: 'u1',
+          email: 'user@test.com',
+          location: 'Bengaluru',
+          moviePreference: const ['Action'],
+          updateProfile: ({
+            required userId,
+            required location,
+            required moviePreference,
+          }) async {
+            capturedArgs = {
+              'userId': userId,
+              'location': location,
+              'moviePreference': moviePreference,
+            };
+            return <String, dynamic>{};
+          },
         ),
       ),
     );
-
-    await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextFormField).at(0), 'Mumbai');
     await tester.enterText(find.byType(TextFormField).at(1), 'Drama, Thriller');
@@ -94,9 +84,6 @@ void main() {
       'location': 'Mumbai',
       'moviePreference': ['Drama', 'Thriller'],
     });
-    expect(poppedResult, {
-      'location': 'Mumbai',
-      'moviePreference': ['Drama', 'Thriller'],
-    });
+    expect(find.text('Home for user@test.com'), findsOneWidget);
   });
 }

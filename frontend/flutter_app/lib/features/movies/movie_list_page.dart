@@ -43,8 +43,8 @@ class _MovieListPageState extends State<MovieListPage> {
   String? _selectedLocationId;
   String? _selectedLocationName;
   var _forYouOnly = false;
-  late var _profileLocation = widget.profileLocation;
-  late var _moviePreference = widget.moviePreference;
+  late final _profileLocation = widget.profileLocation;
+  late final _moviePreference = widget.moviePreference;
 
   Set<String> get _preferredGenres =>
       _moviePreference.map((genre) => genre.toLowerCase()).toSet();
@@ -157,12 +157,6 @@ class _MovieListPageState extends State<MovieListPage> {
         profileLocation: _profileLocation,
         moviePreference: _moviePreference,
         api: _api,
-        onProfileUpdated: (location, moviePreference) {
-          setState(() {
-            _profileLocation = location;
-            _moviePreference = moviePreference;
-          });
-        },
       ),
       body: SafeArea(
         child: Column(

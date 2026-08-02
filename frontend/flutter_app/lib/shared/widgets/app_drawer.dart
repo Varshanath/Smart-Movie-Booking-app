@@ -5,11 +5,6 @@ import '../../features/bookings/my_bookings_page.dart';
 import '../../features/movies/movie_booking_api.dart';
 import '../../features/profile/profile_settings_page.dart';
 
-typedef ProfileUpdated = void Function(
-  String profileLocation,
-  List<String> moviePreference,
-);
-
 class AppDrawer extends StatelessWidget {
   const AppDrawer({
     required this.email,
@@ -17,7 +12,6 @@ class AppDrawer extends StatelessWidget {
     required this.api,
     this.profileLocation = '',
     this.moviePreference = const [],
-    this.onProfileUpdated,
     super.key,
   });
 
@@ -26,7 +20,6 @@ class AppDrawer extends StatelessWidget {
   final MovieBookingApi api;
   final String profileLocation;
   final List<String> moviePreference;
-  final ProfileUpdated? onProfileUpdated;
 
   @override
   Widget build(BuildContext context) {
@@ -80,9 +73,9 @@ class AppDrawer extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.settings_outlined),
               title: const Text('Profile settings'),
-              onTap: () async {
+              onTap: () {
                 Navigator.pop(context);
-                final result = await Navigator.push<Map<String, dynamic>>(
+                Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => ProfileSettingsPage(
@@ -93,11 +86,6 @@ class AppDrawer extends StatelessWidget {
                       api: api,
                     ),
                   ),
-                );
-                if (result == null) return;
-                onProfileUpdated?.call(
-                  result['location'] as String? ?? profileLocation,
-                  (result['moviePreference'] as List<String>?) ?? moviePreference,
                 );
               },
             ),
