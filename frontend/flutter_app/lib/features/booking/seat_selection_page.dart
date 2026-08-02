@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../shared/theme/app_theme.dart';
+import '../../shared/widgets/app_drawer.dart';
 import '../bookings/my_bookings_page.dart';
 import '../movies/models.dart';
 import '../movies/movie_booking_api.dart';
@@ -16,6 +17,8 @@ class SeatSelectionPage extends StatefulWidget {
     required this.userId,
     required this.email,
     required this.api,
+    this.profileLocation = '',
+    this.moviePreference = const [],
     super.key,
   });
 
@@ -26,6 +29,8 @@ class SeatSelectionPage extends StatefulWidget {
   final String userId;
   final String email;
   final MovieBookingApi api;
+  final String profileLocation;
+  final List<String> moviePreference;
 
   @override
   State<SeatSelectionPage> createState() => _SeatSelectionPageState();
@@ -85,6 +90,13 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
             ),
           ],
         ),
+      ),
+      drawer: AppDrawer(
+        userId: widget.userId,
+        email: widget.email,
+        profileLocation: widget.profileLocation,
+        moviePreference: widget.moviePreference,
+        api: widget.api,
       ),
       body: SafeArea(
         child: Column(
@@ -454,8 +466,8 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
-              Navigator.pop(context);
-              Navigator.pop(context);
+              // Pops back past Who's Coming and Movie Detail to Now Showing.
+              Navigator.popUntil(context, (route) => route.isFirst);
             },
             child: const Text('Done'),
           ),
@@ -468,6 +480,9 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
                 MaterialPageRoute(
                   builder: (_) => MyBookingsPage(
                     userId: widget.userId,
+                    email: widget.email,
+                    profileLocation: widget.profileLocation,
+                    moviePreference: widget.moviePreference,
                     api: widget.api,
                   ),
                 ),

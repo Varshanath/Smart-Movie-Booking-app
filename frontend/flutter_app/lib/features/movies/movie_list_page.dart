@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../app/app_routes.dart';
 import '../../core/storage/location_preference.dart';
-import '../bookings/my_bookings_page.dart';
-import '../profile/profile_settings_page.dart';
+import '../../shared/widgets/app_drawer.dart';
 import 'models.dart';
 import 'movie_booking_api.dart';
 import 'movie_detail_page.dart';
@@ -153,7 +151,19 @@ class _MovieListPageState extends State<MovieListPage> {
           ),
         ],
       ),
-      drawer: _drawer(context),
+      drawer: AppDrawer(
+        userId: widget.userId,
+        email: widget.email,
+        profileLocation: _profileLocation,
+        moviePreference: _moviePreference,
+        api: _api,
+        onProfileUpdated: (location, moviePreference) {
+          setState(() {
+            _profileLocation = location;
+            _moviePreference = moviePreference;
+          });
+        },
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -477,6 +487,8 @@ class _MovieListPageState extends State<MovieListPage> {
           screens: _screens,
           userId: widget.userId,
           email: widget.email,
+          profileLocation: _profileLocation,
+          moviePreference: _moviePreference,
           api: _api,
         ),
       ),
@@ -495,89 +507,4 @@ class _MovieListPageState extends State<MovieListPage> {
     return palette[index];
   }
 
-  Widget _drawer(BuildContext context) {
-    return Drawer(
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Icon(
-                    Icons.local_movies_outlined,
-                    size: 42,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    widget.email.isEmpty ? 'Movie bookings' : widget.email,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.confirmation_number_outlined),
-              title: const Text('My bookings'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => MyBookingsPage(
-                      userId: widget.userId,
-                      api: _api,
-                    ),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined),
-              title: const Text('Profile settings'),
-              onTap: () async {
-                Navigator.pop(context);
-                final result = await Navigator.push<Map<String, dynamic>>(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ProfileSettingsPage(
-                      userId: widget.userId,
-                      email: widget.email,
-                      location: _profileLocation,
-                      moviePreference: _moviePreference,
-                    ),
-                  ),
-                );
-                if (result == null || !mounted) return;
-                setState(() {
-                  _profileLocation = result['location'] as String? ?? _profileLocation;
-                  _moviePreference =
-                      (result['moviePreference'] as List<String>?) ?? _moviePreference;
-                });
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
-              onTap: () {
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  AppRoutes.login,
-                  (route) => false,
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
 
 import '../../shared/theme/app_theme.dart';
+import '../../shared/widgets/app_drawer.dart';
 import '../movies/models.dart';
 import '../movies/movie_booking_api.dart';
 
 class MyBookingsPage extends StatefulWidget {
-  const MyBookingsPage({required this.userId, required this.api, super.key});
+  const MyBookingsPage({
+    required this.userId,
+    required this.api,
+    this.email = '',
+    this.profileLocation = '',
+    this.moviePreference = const [],
+    super.key,
+  });
 
   final String userId;
   final MovieBookingApi api;
+  final String email;
+  final String profileLocation;
+  final List<String> moviePreference;
 
   @override
   State<MyBookingsPage> createState() => _MyBookingsPageState();
@@ -97,6 +108,13 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
             onPressed: _loading ? null : _load,
           ),
         ],
+      ),
+      drawer: AppDrawer(
+        userId: widget.userId,
+        email: widget.email,
+        profileLocation: widget.profileLocation,
+        moviePreference: widget.moviePreference,
+        api: widget.api,
       ),
       body: SafeArea(child: _body()),
     );

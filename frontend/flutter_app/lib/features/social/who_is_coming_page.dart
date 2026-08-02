@@ -3,8 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../app/app_routes.dart';
 import '../../shared/theme/app_theme.dart';
+import '../../shared/widgets/app_drawer.dart';
+import '../booking/seat_selection_page.dart';
 import '../movies/models.dart';
 import '../movies/movie_booking_api.dart';
 
@@ -18,17 +19,25 @@ const _avatarPalette = [
 
 class WhoIsComingPage extends StatefulWidget {
   const WhoIsComingPage({
+    required this.movie,
+    required this.show,
+    required this.theatreName,
+    required this.screenName,
     required this.userId,
     required this.email,
-    this.location = '',
+    this.profileLocation = '',
     this.moviePreference = const [],
     this.api,
     super.key,
   });
 
+  final Movie movie;
+  final Show show;
+  final String theatreName;
+  final String screenName;
   final String userId;
   final String email;
-  final String location;
+  final String profileLocation;
   final List<String> moviePreference;
   final MovieBookingApi? api;
 
@@ -102,21 +111,35 @@ class _WhoIsComingPageState extends State<WhoIsComingPage> {
   int get _totalGuests => _selected.length + _extraGuests;
 
   void _continue() {
-    Navigator.pushReplacementNamed(
+    Navigator.push(
       context,
-      AppRoutes.home,
-      arguments: {
-        'id': widget.userId,
-        'email': widget.email,
-        'location': widget.location,
-        'moviePreference': widget.moviePreference,
-      },
+      MaterialPageRoute(
+        builder: (_) => SeatSelectionPage(
+          movie: widget.movie,
+          show: widget.show,
+          theatreName: widget.theatreName,
+          screenName: widget.screenName,
+          userId: widget.userId,
+          email: widget.email,
+          profileLocation: widget.profileLocation,
+          moviePreference: widget.moviePreference,
+          api: _api,
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
+      drawer: AppDrawer(
+        userId: widget.userId,
+        email: widget.email,
+        profileLocation: widget.profileLocation,
+        moviePreference: widget.moviePreference,
+        api: _api,
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),

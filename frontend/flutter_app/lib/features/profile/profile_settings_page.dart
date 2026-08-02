@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../shared/theme/app_theme.dart';
+import '../../shared/widgets/app_drawer.dart';
 import '../auth/auth_api.dart';
 import '../auth/change_password_page.dart';
+import '../movies/movie_booking_api.dart';
 
 typedef UpdateProfile = Future<dynamic> Function({
   required String userId,
@@ -11,19 +13,21 @@ typedef UpdateProfile = Future<dynamic> Function({
 });
 
 class ProfileSettingsPage extends StatefulWidget {
-  const ProfileSettingsPage({
+  ProfileSettingsPage({
     required this.userId,
     required this.email,
     this.location = '',
     this.moviePreference = const [],
+    MovieBookingApi? api,
     super.key,
     this.updateProfile = _updateProfileWithApi,
-  });
+  }) : api = api ?? MovieBookingApi();
 
   final String userId;
   final String email;
   final String location;
   final List<String> moviePreference;
+  final MovieBookingApi api;
   final UpdateProfile updateProfile;
 
   static Future<dynamic> _updateProfileWithApi({
@@ -60,6 +64,13 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Profile settings')),
+      drawer: AppDrawer(
+        userId: widget.userId,
+        email: widget.email,
+        profileLocation: widget.location,
+        moviePreference: widget.moviePreference,
+        api: widget.api,
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(20),

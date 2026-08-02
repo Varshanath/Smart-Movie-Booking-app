@@ -5,12 +5,12 @@ import 'package:smart_movie_booking_app/features/profile/profile_settings_page.d
 void main() {
   testWidgets('prefills location and movie preference fields', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: ProfileSettingsPage(
           userId: 'u1',
           email: 'user@test.com',
           location: 'Bengaluru',
-          moviePreference: ['Action', 'Comedy'],
+          moviePreference: const ['Action', 'Comedy'],
         ),
       ),
     );
@@ -21,12 +21,12 @@ void main() {
 
   testWidgets('validates empty fields', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: ProfileSettingsPage(
           userId: 'u1',
           email: 'user@test.com',
           location: 'Bengaluru',
-          moviePreference: ['Action'],
+          moviePreference: const ['Action'],
         ),
       ),
     );

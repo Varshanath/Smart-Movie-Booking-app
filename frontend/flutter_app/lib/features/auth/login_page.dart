@@ -143,7 +143,7 @@ class _LoginPageState extends State<LoginPage> {
 
       Navigator.pushNamedAndRemoveUntil(
         context,
-        AppRoutes.whoIsComing,
+        AppRoutes.home,
         (route) => false,
         arguments: user ?? {'email': email},
       );

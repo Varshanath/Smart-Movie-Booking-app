@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../shared/theme/app_theme.dart';
-import '../booking/seat_selection_page.dart';
+import '../../shared/widgets/app_drawer.dart';
+import '../social/who_is_coming_page.dart';
 import 'models.dart';
 import 'movie_booking_api.dart';
 
@@ -14,6 +15,8 @@ class MovieDetailPage extends StatelessWidget {
     required this.userId,
     required this.email,
     required this.api,
+    this.profileLocation = '',
+    this.moviePreference = const [],
     super.key,
   });
 
@@ -24,6 +27,8 @@ class MovieDetailPage extends StatelessWidget {
   final String userId;
   final String email;
   final MovieBookingApi api;
+  final String profileLocation;
+  final List<String> moviePreference;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +41,13 @@ class MovieDetailPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(movie.title)),
+      drawer: AppDrawer(
+        userId: userId,
+        email: email,
+        profileLocation: profileLocation,
+        moviePreference: moviePreference,
+        api: api,
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -208,13 +220,15 @@ class MovieDetailPage extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => SeatSelectionPage(
+        builder: (_) => WhoIsComingPage(
           movie: movie,
           show: show,
           theatreName: theatre?.name ?? 'Theatre',
           screenName: screen?.name ?? 'Screen',
           userId: userId,
           email: email,
+          profileLocation: profileLocation,
+          moviePreference: moviePreference,
           api: api,
         ),
       ),

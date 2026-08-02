@@ -37,7 +37,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         routes: {
-          AppRoutes.whoIsComing: (context) {
+          AppRoutes.home: (context) {
             final arguments = ModalRoute.of(context)?.settings.arguments;
             final email = arguments is Map<String, dynamic>
                 ? arguments['email'] as String?
@@ -90,7 +90,7 @@ void main() {
           '/': (_) => LoginPage(
                 loginUser: ({required email, required password}) async {},
               ),
-          AppRoutes.whoIsComing: (context) {
+          AppRoutes.home: (context) {
             final arguments = ModalRoute.of(context)?.settings.arguments;
             final email = arguments is Map<String, dynamic>
                 ? arguments['email'] as String?
