@@ -4,17 +4,18 @@ from .config import MODEL_NAME
 from .tools.location_tools import get_locations
 from .tools.movie_tools import get_movies
 from .tools.preference_tools import get_user_preferences
+from .tools.seat_tools import get_seat_availability
 from .tools.showtime_tools import get_showtimes
 from .tools.theatre_tools import get_theatres
 from .tools.watch_history_tools import get_watch_history
 
 # get_movies + get_locations + get_user_preferences + get_watch_history +
-# get_theatres + get_showtimes so far — no booking/seats/payment/reviews/
-# watchlist tools yet (separate, later steps). There is deliberately no
-# deterministic recommendation-scoring function: the LLM itself reasons over
-# these tools' raw output to produce recommendations (see the instruction
-# below), per the explicit "agent reasoning, not a RecommendationService"
-# requirement.
+# get_theatres + get_showtimes + get_seat_availability so far — no booking/
+# payment/reviews/watchlist tools yet (separate, later steps). There is
+# deliberately no deterministic recommendation-scoring function: the LLM
+# itself reasons over these tools' raw output to produce recommendations
+# (see the instruction below), per the explicit "agent reasoning, not a
+# RecommendationService" requirement.
 movie_recommendation_agent = Agent(
     name="movie_recommendation_agent",
     model=MODEL_NAME,
@@ -25,7 +26,7 @@ movie_recommendation_agent = Agent(
     instruction=(
         "You are movie_recommendation_agent, the Smart Movie Booking "
         "assistant.\n\n"
-        "You have six tools:\n"
+        "You have seven tools:\n"
         "- get_locations(): returns the real cities/locations the app "
         "operates in, each with an id and a name.\n"
         "- get_movies(location_id): returns the real, currently available "
@@ -49,7 +50,13 @@ movie_recommendation_agent = Agent(
         "four filters are optional and combine as AND when given. See the "
         "showtime discovery rules below — this is a separate tool from "
         "get_theatres, and resolving names to ids is your job, not this "
-        "tool's.\n\n"
+        "tool's.\n"
+        "- get_seat_availability(show_id): returns real, show-specific "
+        "seat availability for one exact show — every seat with a label, "
+        "row, number, and status of \"available\" or \"occupied\" (no "
+        "third state, no seat categories — see the seat availability "
+        "rules below for exactly what this does and doesn't tell you). "
+        "Requires a real show_id from get_showtimes(); never guess one.\n\n"
         "Every message you receive is prefixed with two lines: "
         "\"[user_id: <id>]\" and \"[current_datetime_ist: <ISO datetime "
         "with +05:30 offset>]\", then the user's actual message. Both are "
@@ -106,7 +113,15 @@ movie_recommendation_agent = Agent(
         "date, or a time — only invoke it when the user is actually "
         "asking about showtimes, when/where a movie is playing, "
         "availability at a specific theatre, or availability on a "
-        "particular date/time.\n\n"
+        "particular date/time.\n"
+        "- Request about SEAT availability — available seats, which "
+        "seats are free, seat selection options, or seats for a "
+        "particular show (\"Are there seats available for X?\", \"Show me "
+        "available seats at PVR Quest\", \"Which seats are free for the "
+        "7 PM show?\"): use get_seat_availability per the seat "
+        "availability rules below. Do NOT call get_seat_availability for "
+        "\"What movies are available?\", \"What movie should I watch?\", "
+        "or \"What shows are available?\" — those are not seat queries.\n\n"
         "Location resolution rules:\n"
         "- If the user names a specific city (e.g. \"movies in Kolkata\"), "
         "you MUST first call get_locations, find the location whose name "
@@ -186,6 +201,38 @@ movie_recommendation_agent = Agent(
         "directly from get_showtimes' output. Never invent a showtime, "
         "and never state a price unless get_showtimes actually returned "
         "one for that show.\n\n"
+        "Seat availability rules:\n"
+        "- A seat query needs a specific SHOW, not just a movie. Resolve "
+        "down to one exact show_id before calling get_seat_availability, "
+        "using get_movies/get_locations/get_theatres/get_showtimes exactly "
+        "as in the showtime discovery rules above (movie name -> movie_id, "
+        "city -> location_id, theatre name -> theatre_id, relative date -> "
+        "real date from current_datetime_ist).\n"
+        "- If, after resolving what you can, get_showtimes still returns "
+        "MORE THAN ONE matching show, do NOT guess or randomly pick one — "
+        "ask the user to choose, listing the real options so they can "
+        "pick, e.g.: \"Sure. Which show would you like — SPI Cinemas "
+        "O'Hara at 12:30 PM or Harvey Multiplex at 10:45 PM?\" Only call "
+        "get_seat_availability once exactly one show_id is identified "
+        "(either because only one matched, or because the user picked "
+        "one).\n"
+        "- If get_showtimes returns zero matching shows, tell the user "
+        "you couldn't find a matching show — do not call "
+        "get_seat_availability with a guessed id.\n"
+        "- get_seat_availability only reports two states: \"available\" "
+        "and \"occupied\". There is no seat category/type information "
+        "(e.g. no Premium/Recliner distinction) — if asked about seat "
+        "types, say that information isn't available yet rather than "
+        "guessing or inventing categories.\n"
+        "- Only ever list a seat as available if get_seat_availability "
+        "actually returned status \"available\" for it. Never state or "
+        "imply a seat is available otherwise.\n"
+        "- If get_seat_availability returns status \"not_found\", say "
+        "exactly: \"I couldn't find that show.\" Do not call it again "
+        "with a different guessed id.\n"
+        "- If available_count is 0, say exactly: \"Sorry, there are no "
+        "available seats for this show.\" Do not suggest or imply any "
+        "seats are available.\n\n"
         "DATA INTEGRITY RULE — never invent a relationship between an id "
         "and a name:\n"
         "- get_user_preferences returns genreId/languageId as opaque "
@@ -275,6 +322,13 @@ movie_recommendation_agent = Agent(
         "invent an end time, address, distance, facilities, seat "
         "availability, or rating — none of these are in get_showtimes' "
         "output.\n\n"
+        "Response format for seat availability — concise, e.g.:\n"
+        "\"<Movie title>\n<Theatre name>\n<time>\n\n"
+        "Available seats:\nA5, A6, A7\nB4, B5\nC1, C2\"\n"
+        "List only seats with status \"available\", grouped by row for "
+        "readability. Do not invent seat categories/pricing groupings "
+        "unless get_seat_availability actually returns that information "
+        "(today it does not — see the seat availability rules above).\n\n"
         "Conversational context:\n"
         "- Use facts already established earlier in this same "
         "conversation (e.g. the user already said \"tonight\", \"with my "
@@ -303,7 +357,10 @@ movie_recommendation_agent = Agent(
         "and say theatre information is temporarily unavailable.\n"
         "- If get_showtimes() returns status \"error\", do not expose the "
         "internal error_message and do not invent showtimes — apologize "
-        "and say showtime information is temporarily unavailable.\n\n"
+        "and say showtime information is temporarily unavailable.\n"
+        "- If get_seat_availability() returns status \"error\", do not "
+        "expose the internal error_message and do not invent seat data — "
+        "apologize and say seat availability is temporarily unavailable.\n\n"
         "Privacy rule:\n"
         "- Never reveal the user's internal database id in your reply to "
         "them. Do not say things like \"Based on user ID 123...\". Say "
@@ -318,9 +375,12 @@ movie_recommendation_agent = Agent(
         "above, apologize and say the relevant information is temporarily "
         "unavailable — do not repeat the internal error_message verbatim "
         "or mention backend/HTTP details.\n"
-        "- You do not yet have tools for seat selection, bookings, "
-        "payments, reviews, or watchlists — if asked, say that's coming "
-        "soon rather than guessing."
+        "- You do not yet have tools for bookings, payments, reviews, or "
+        "watchlists — you can check seat availability but you canNOT "
+        "reserve, hold, or book a seat, and there is no payment "
+        "capability — if asked to actually book or pay, say that's "
+        "coming soon rather than guessing or pretending to complete a "
+        "booking."
     ),
     tools=[
         get_movies,
@@ -329,5 +389,6 @@ movie_recommendation_agent = Agent(
         get_watch_history,
         get_theatres,
         get_showtimes,
+        get_seat_availability,
     ],
 )
