@@ -4,7 +4,7 @@ import { isValidSeatLabel } from "../shows/show.service";
 import { findUserById } from "../users/user.repository";
 import { ApiError } from "../../shared/utils/api-error";
 import { CreateBookingInput } from "./booking.model";
-import { listBookings, listBookingsByShowId, saveBooking } from "./booking.repository";
+import { createBookingWithLock, listBookings } from "./booking.repository";
 
 export async function getBookings() {
   return listBookings();
@@ -40,20 +40,12 @@ export async function createBooking(payload: unknown) {
     }
   }
 
-  const existingBookings = await listBookingsByShowId(input.showId);
-  const alreadyBooked = new Set(
-    existingBookings
-      .filter((booking) => booking.status === "confirmed")
-      .flatMap((booking) => booking.seatNumbers),
-  );
-  const conflictingSeat = input.seatNumbers.find((seatNumber) =>
-    alreadyBooked.has(seatNumber),
-  );
-  if (conflictingSeat) {
-    throw new ApiError(409, `Seat ${conflictingSeat} is already booked`);
-  }
-
-  return saveBooking(input);
+  // Everything above is fast-fail validation on data that isn't contended
+  // (show/screen/user/payment existence, seat-label shape) — it's safe to
+  // check without any locking. The actual availability re-check and the
+  // insert happen atomically inside createBookingWithLock, which is what
+  // prevents two concurrent requests from both booking the same seat.
+  return createBookingWithLock(input);
 }
 
 function validateCreateBookingInput(payload: unknown): CreateBookingInput {

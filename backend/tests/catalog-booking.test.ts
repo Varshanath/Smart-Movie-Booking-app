@@ -292,6 +292,27 @@ describe("movie, theatre, and booking APIs", () => {
     expect(response.body.message).toBe("Seat B5 is already booked");
   });
 
+  it("rejects a booking that lists the same seat twice in one request", async () => {
+    const user = await registerUser();
+    const movie = await createMovie();
+    const theatre = await createTheatre();
+    const screen = await createScreen(theatre.id);
+    const show = await createShow(movie.id, screen.id);
+    const payment = await createPayment();
+
+    const response = await request(app)
+      .post("/api/bookings")
+      .send({
+        userId: user.id,
+        showId: show.id,
+        paymentId: payment.id,
+        seatNumbers: ["C1", "C1"],
+      })
+      .expect(400);
+
+    expect(response.body.message).toBe("seatNumbers must not contain duplicate seats");
+  });
+
   it("rejects a booking for a seat outside the screen layout", async () => {
     const user = await registerUser();
     const movie = await createMovie();
