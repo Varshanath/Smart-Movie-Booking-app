@@ -200,7 +200,7 @@ describe("movie, theatre, and booking APIs", () => {
     const theatre = await createTheatre();
     const screen = await createScreen(theatre.id);
     const show = await createShow(movie.id, screen.id);
-    const payment = await createPayment();
+    const payment = await createDemoPaidPayment(show.id, ["A1", "A2"]);
 
     const response = await request(app)
       .post("/api/bookings")
@@ -232,7 +232,7 @@ describe("movie, theatre, and booking APIs", () => {
     const theatre = await createTheatre();
     const screen = await createScreen(theatre.id);
     const show = await createShow(movie.id, screen.id);
-    const payment = await createPayment();
+    const payment = await createDemoPaidPayment(show.id, ["A1", "A2"]);
 
     await request(app)
       .post("/api/bookings")
@@ -266,7 +266,7 @@ describe("movie, theatre, and booking APIs", () => {
     const theatre = await createTheatre();
     const screen = await createScreen(theatre.id);
     const show = await createShow(movie.id, screen.id);
-    const payment = await createPayment();
+    const payment = await createDemoPaidPayment(show.id, ["B5"]);
 
     await request(app)
       .post("/api/bookings")
@@ -278,7 +278,7 @@ describe("movie, theatre, and booking APIs", () => {
       })
       .expect(201);
 
-    const otherPayment = await createPayment();
+    const otherPayment = await createDemoPaidPayment(show.id, ["B5"]);
     const response = await request(app)
       .post("/api/bookings")
       .send({
@@ -334,6 +334,88 @@ describe("movie, theatre, and booking APIs", () => {
     expect(response.body.message).toBe("Seat Z99 does not exist on this screen");
   });
 
+  it("rejects a booking whose payment is still pending", async () => {
+    const user = await registerUser();
+    const movie = await createMovie();
+    const theatre = await createTheatre();
+    const screen = await createScreen(theatre.id);
+    const show = await createShow(movie.id, screen.id);
+
+    const createResponse = await request(app)
+      .post("/api/payments/demo")
+      .send({ showId: show.id, seatNumbers: ["D1"] })
+      .expect(201);
+    // deliberately not confirming it — it stays "pending"
+
+    const response = await request(app)
+      .post("/api/bookings")
+      .send({
+        userId: user.id,
+        showId: show.id,
+        paymentId: createResponse.body.payment.id,
+        seatNumbers: ["D1"],
+      })
+      .expect(402);
+
+    expect(response.body.message).toBe("Payment has not been completed");
+  });
+
+  it("rejects a booking whose payment failed", async () => {
+    const user = await registerUser();
+    const movie = await createMovie();
+    const theatre = await createTheatre();
+    const screen = await createScreen(theatre.id);
+    const show = await createShow(movie.id, screen.id);
+
+    const createResponse = await request(app)
+      .post("/api/payments/demo")
+      .send({ showId: show.id, seatNumbers: ["D2"] })
+      .expect(201);
+    await request(app)
+      .post(`/api/payments/demo/${createResponse.body.payment.id}/confirm`)
+      .send({ simulateFailure: true })
+      .expect(200);
+
+    const response = await request(app)
+      .post("/api/bookings")
+      .send({
+        userId: user.id,
+        showId: show.id,
+        paymentId: createResponse.body.payment.id,
+        seatNumbers: ["D2"],
+      })
+      .expect(402);
+
+    expect(response.body.message).toBe("Payment has not been completed");
+  });
+
+  it("rejects a booking whose paid payment amount does not match the authoritative total", async () => {
+    // Simulates the exact exploit this validation exists to close: a paid
+    // payment record created with an arbitrary, wrong amount (e.g. via the
+    // raw, unauthenticated POST /api/payments endpoint) must not be
+    // spendable on a booking it doesn't actually cover.
+    const user = await registerUser();
+    const movie = await createMovie();
+    const theatre = await createTheatre();
+    const screen = await createScreen(theatre.id);
+    const show = await createShow(movie.id, screen.id); // price 220, so 1 seat should cost 220
+
+    const cheapPayment = await createPayment(); // amount 500, but request below is for 1 seat (220)
+    const response = await request(app)
+      .post("/api/bookings")
+      .send({
+        userId: user.id,
+        showId: show.id,
+        paymentId: cheapPayment.id,
+        seatNumbers: ["D3"],
+      })
+      .expect(402);
+
+    expect(response.body.message).toBe(
+      "Payment amount does not match the required amount for this booking",
+    );
+  });
+
   it("lists screens, shows, and payments", async () => {
     const movie = await createMovie();
     const theatre = await createTheatre();
@@ -362,7 +444,7 @@ describe("movie, theatre, and booking APIs", () => {
     const theatre = await createTheatre();
     const screen = await createScreen(theatre.id);
     const show = await createShow(movie.id, screen.id);
-    const payment = await createPayment();
+    const payment = await createDemoPaidPayment(show.id, ["C1", "C2", "C3"]);
 
     const response = await request(app)
       .post("/api/bookings/movie")
@@ -489,5 +571,21 @@ describe("movie, theatre, and booking APIs", () => {
     });
 
     return response.body.payment;
+  }
+
+  // Creates a payment through the real demo-payment flow, so its amount is
+  // always the show's actual price x seatNumbers.length — this is what a
+  // legitimate client must do to book successfully now that booking.service.ts
+  // validates the payment's amount/status against real backend data.
+  async function createDemoPaidPayment(showId: string, seatNumbers: string[]) {
+    const createResponse = await request(app)
+      .post("/api/payments/demo")
+      .send({ showId, seatNumbers });
+
+    const confirmResponse = await request(app)
+      .post(`/api/payments/demo/${createResponse.body.payment.id}/confirm`)
+      .send({});
+
+    return confirmResponse.body.payment;
   }
 });

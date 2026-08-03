@@ -1,3 +1,4 @@
+import { calculateAuthoritativeAmount } from "../payments/demo-payment.service";
 import { findPaymentById } from "../payments/payment.repository";
 import { findScreenById, findShowById } from "../shows/show.repository";
 import { isValidSeatLabel } from "../shows/show.service";
@@ -38,6 +39,24 @@ export async function createBooking(payload: unknown) {
     if (!isValidSeatLabel(seatNumber, screen.rows, screen.seatsPerRow)) {
       throw new ApiError(400, `Seat ${seatNumber} does not exist on this screen`);
     }
+  }
+
+  // The payment must actually be paid, and for exactly this booking's real
+  // cost — never trust a client-claimed status or amount (a payment record
+  // created with an arbitrary amount/status, e.g. via the raw POST
+  // /api/payments endpoint, must not be spendable on a booking it doesn't
+  // actually cover). show.price is real backend data set when the show was
+  // created, so this recomputes the authoritative total independently of
+  // whatever the payment happens to already say.
+  if (payment.status !== "paid") {
+    throw new ApiError(402, "Payment has not been completed");
+  }
+  const authoritativeAmount = calculateAuthoritativeAmount(show.price, input.seatNumbers.length);
+  if (payment.amount !== authoritativeAmount) {
+    throw new ApiError(
+      402,
+      `Payment amount does not match the required amount for this booking`,
+    );
   }
 
   // Everything above is fast-fail validation on data that isn't contended
