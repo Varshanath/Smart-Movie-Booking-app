@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_routes.dart';
 import '../../core/storage/auth_storage.dart';
+import '../../features/ai/ai_chat_page.dart';
 import '../../features/bookings/my_bookings_page.dart';
 import '../../features/movies/movie_booking_api.dart';
 import '../../features/profile/profile_settings_page.dart';
@@ -63,6 +64,25 @@ class AppDrawer extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => MyBookingsPage(
+                      userId: userId,
+                      email: email,
+                      profileLocation: profileLocation,
+                      moviePreference: moviePreference,
+                      api: api,
+                    ),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.smart_toy_outlined),
+              title: const Text('AI Assistant'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AiChatPage(
                       userId: userId,
                       email: email,
                       profileLocation: profileLocation,
