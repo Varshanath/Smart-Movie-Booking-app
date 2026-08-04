@@ -1,5 +1,6 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 
+import { signAuthToken } from "../auth/token";
 import { ApiError } from "../../shared/utils/api-error";
 import {
   ChangePasswordInput,
@@ -43,7 +44,9 @@ export async function createUser(payload: unknown) {
     ...profile,
     passwordHash: hashPassword(password),
   });
-  return toPublicUser(user);
+  // Token payload is just `sub: user.id` (see modules/auth/token.ts) — never
+  // email/name/preferences/etc., since a JWT is signed but not encrypted.
+  return { user: toPublicUser(user), token: signAuthToken(user.id) };
 }
 
 export async function loginUser(payload: unknown) {
@@ -54,7 +57,7 @@ export async function loginUser(payload: unknown) {
     throw new ApiError(401, "Email ID or password is incorrect");
   }
 
-  return toPublicUser(user);
+  return { user: toPublicUser(user), token: signAuthToken(user.id) };
 }
 
 export async function searchUsers(rawQuery: unknown, rawExcludeUserId: unknown) {

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../app/app_routes.dart';
+import '../../core/storage/auth_storage.dart';
 import '../../shared/widgets/auth_page_shell.dart';
 import 'auth_api.dart';
 
@@ -34,6 +37,40 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _hidePassword = true;
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fire-and-forget: if a session is already stored, this hops straight
+    // to the home screen; otherwise the login form (already rendered
+    // above) just stays as-is. Wrapped in try/catch since secure storage
+    // isn't backed by a real platform channel in the widget-test
+    // environment — that must never crash the login screen itself.
+    unawaited(_restoreSessionIfPresent());
+  }
+
+  Future<void> _restoreSessionIfPresent() async {
+    try {
+      final loggedIn = await AuthStorage.isLoggedIn();
+      if (!loggedIn || !mounted) {
+        return;
+      }
+      final userId = await AuthStorage.getUserId();
+      final email = await AuthStorage.getEmail();
+      if (!mounted) {
+        return;
+      }
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.home,
+        (route) => false,
+        arguments: {'id': userId ?? '', 'email': email ?? ''},
+      );
+    } catch (_) {
+      // Secure storage unavailable (e.g. in tests) — fall back to showing
+      // the login form, exactly like a fresh, never-logged-in install.
+    }
+  }
 
   @override
   void dispose() {
@@ -136,6 +173,19 @@ class _LoginPageState extends State<LoginPage> {
       final user = result is Map<String, dynamic>
           ? result['user'] as Map<String, dynamic>?
           : null;
+      final token = result is Map<String, dynamic> ? result['token'] as String? : null;
+
+      // The JWT lives only in secure storage from here on — it is
+      // deliberately NOT part of the route arguments below, so it never
+      // ends up threaded through any widget constructor.
+      if (token != null && token.isNotEmpty) {
+        await AuthStorage.saveToken(token);
+        final userId = user?['id'] as String?;
+        if (userId != null && userId.isNotEmpty) {
+          await AuthStorage.saveUserId(userId);
+        }
+        await AuthStorage.saveEmail(email);
+      }
 
       if (!mounted) {
         return;

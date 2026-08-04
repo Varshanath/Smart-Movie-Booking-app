@@ -10,7 +10,7 @@ describe("POST /api/users/:userId/profile", () => {
     await clearUsersForTests();
   });
 
-  async function registerUser() {
+  async function registerUser(email = "varsha@test.com", phoneNumber = "9876543210") {
     const response = await request(app)
       .post("/api/users/register")
       .send({
@@ -18,19 +18,20 @@ describe("POST /api/users/:userId/profile", () => {
         gender: "female",
         location: "Bengaluru",
         moviePreference: ["Action"],
-        email: "varsha@test.com",
-        phoneNumber: "9876543210",
+        email,
+        phoneNumber,
         password: "password123",
       })
       .expect(201);
-    return response.body.user;
+    return { user: response.body.user, token: response.body.token as string };
   }
 
   it("updates the user's location and movie preferences", async () => {
-    const user = await registerUser();
+    const { user, token } = await registerUser();
 
     const response = await request(app)
       .post(`/api/users/${user.id}/profile`)
+      .set("Authorization", `Bearer ${token}`)
       .send({ location: "Mumbai", moviePreference: ["Comedy", "Drama"] })
       .expect(200);
 
@@ -51,10 +52,11 @@ describe("POST /api/users/:userId/profile", () => {
   });
 
   it("rejects an empty location", async () => {
-    const user = await registerUser();
+    const { user, token } = await registerUser();
 
     const response = await request(app)
       .post(`/api/users/${user.id}/profile`)
+      .set("Authorization", `Bearer ${token}`)
       .send({ location: "", moviePreference: ["Comedy"] })
       .expect(400);
 
@@ -62,20 +64,38 @@ describe("POST /api/users/:userId/profile", () => {
   });
 
   it("rejects an empty movie preference list", async () => {
-    const user = await registerUser();
+    const { user, token } = await registerUser();
 
     const response = await request(app)
       .post(`/api/users/${user.id}/profile`)
+      .set("Authorization", `Bearer ${token}`)
       .send({ location: "Mumbai", moviePreference: [] })
       .expect(400);
 
     expect(response.body.message).toBe("moviePreference is required");
   });
 
-  it("returns 404 for an unknown user", async () => {
-    await request(app)
-      .post("/api/users/00000000-0000-0000-0000-000000000000/profile")
+  it("rejects requests with no Authorization header", async () => {
+    const { user } = await registerUser();
+
+    const response = await request(app)
+      .post(`/api/users/${user.id}/profile`)
       .send({ location: "Mumbai", moviePreference: ["Comedy"] })
-      .expect(404);
+      .expect(401);
+
+    expect(response.body.message).toBe("Authentication is required");
+  });
+
+  it("rejects updating another user's profile even with a valid token", async () => {
+    const { token: userAToken } = await registerUser("user-a@test.com", "9876543210");
+    const { user: userB } = await registerUser("user-b@test.com", "9876543211");
+
+    const response = await request(app)
+      .post(`/api/users/${userB.id}/profile`)
+      .set("Authorization", `Bearer ${userAToken}`)
+      .send({ location: "Mumbai", moviePreference: ["Comedy"] })
+      .expect(403);
+
+    expect(response.body.message).toBe("You do not have access to this resource");
   });
 });

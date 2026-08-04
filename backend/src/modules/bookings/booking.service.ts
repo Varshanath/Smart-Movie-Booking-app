@@ -5,14 +5,22 @@ import { isValidSeatLabel } from "../shows/show.service";
 import { findUserById } from "../users/user.repository";
 import { ApiError } from "../../shared/utils/api-error";
 import { CreateBookingInput } from "./booking.model";
-import { createBookingWithLock, listBookings } from "./booking.repository";
+import { createBookingWithLock, listBookingsByUserId } from "./booking.repository";
 
-export async function getBookings() {
-  return listBookings();
+export async function getBookings(authenticatedUserId: string) {
+  return listBookingsByUserId(authenticatedUserId);
 }
 
-export async function createBooking(payload: unknown) {
+export async function createBooking(payload: unknown, authenticatedUserId: string) {
   const input = validateCreateBookingInput(payload);
+
+  // The booking must always belong to whoever the JWT actually authenticated
+  // — never to a userId the caller merely typed into the request body. This
+  // is what stops "User A's token + User B's userId in the body" from
+  // creating a booking as User B.
+  if (input.userId !== authenticatedUserId) {
+    throw new ApiError(403, "Cannot create a booking for another user");
+  }
 
   const [user, show, payment] = await Promise.all([
     findUserById(input.userId),

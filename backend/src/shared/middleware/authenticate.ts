@@ -33,3 +33,14 @@ export function authenticate(request: Request, _response: Response, next: NextFu
     next(new ApiError(401, AUTH_ERROR_MESSAGE));
   }
 }
+
+// Small typed accessor for controllers on routes that are always mounted
+// behind `authenticate` — throws the same 401 `authenticate` itself would
+// use if req.user is somehow missing, instead of scattering `request.user!`
+// non-null assertions (or risking a raw runtime crash) across controllers.
+export function requireAuthenticatedUserId(request: Request): string {
+  if (!request.user) {
+    throw new ApiError(401, AUTH_ERROR_MESSAGE);
+  }
+  return request.user.id;
+}

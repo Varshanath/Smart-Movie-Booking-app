@@ -171,19 +171,23 @@ describe("movie, theatre, and booking APIs", () => {
 
     await request(app)
       .post(`/api/users/${user.id}/preferences`)
+      .set("Authorization", `Bearer ${user.token}`)
       .send({ genreId: genre.id, languageId: language.id })
       .expect(201);
 
     await request(app)
       .post(`/api/users/${user.id}/watch-history`)
+      .set("Authorization", `Bearer ${user.token}`)
       .send({ movieId: movie.id })
       .expect(201);
 
     const preferences = await request(app)
       .get(`/api/users/${user.id}/preferences`)
+      .set("Authorization", `Bearer ${user.token}`)
       .expect(200);
     const history = await request(app)
       .get(`/api/users/${user.id}/watch-history`)
+      .set("Authorization", `Bearer ${user.token}`)
       .expect(200);
 
     expect(preferences.body.preferences).toContainEqual(
@@ -204,6 +208,7 @@ describe("movie, theatre, and booking APIs", () => {
 
     const response = await request(app)
       .post("/api/bookings")
+      .set("Authorization", `Bearer ${user.token}`)
       .send({
         userId: user.id,
         showId: show.id,
@@ -222,7 +227,10 @@ describe("movie, theatre, and booking APIs", () => {
       status: "confirmed",
     });
 
-    const listResponse = await request(app).get("/api/bookings").expect(200);
+    const listResponse = await request(app)
+      .get("/api/bookings")
+      .set("Authorization", `Bearer ${user.token}`)
+      .expect(200);
     expect(listResponse.body.bookings).toHaveLength(1);
   });
 
@@ -236,6 +244,7 @@ describe("movie, theatre, and booking APIs", () => {
 
     await request(app)
       .post("/api/bookings")
+      .set("Authorization", `Bearer ${user.token}`)
       .send({
         userId: user.id,
         showId: show.id,
@@ -270,6 +279,7 @@ describe("movie, theatre, and booking APIs", () => {
 
     await request(app)
       .post("/api/bookings")
+      .set("Authorization", `Bearer ${user.token}`)
       .send({
         userId: user.id,
         showId: show.id,
@@ -281,6 +291,7 @@ describe("movie, theatre, and booking APIs", () => {
     const otherPayment = await createDemoPaidPayment(show.id, ["B5"]);
     const response = await request(app)
       .post("/api/bookings")
+      .set("Authorization", `Bearer ${user.token}`)
       .send({
         userId: user.id,
         showId: show.id,
@@ -302,6 +313,7 @@ describe("movie, theatre, and booking APIs", () => {
 
     const response = await request(app)
       .post("/api/bookings")
+      .set("Authorization", `Bearer ${user.token}`)
       .send({
         userId: user.id,
         showId: show.id,
@@ -323,6 +335,7 @@ describe("movie, theatre, and booking APIs", () => {
 
     const response = await request(app)
       .post("/api/bookings")
+      .set("Authorization", `Bearer ${user.token}`)
       .send({
         userId: user.id,
         showId: show.id,
@@ -349,6 +362,7 @@ describe("movie, theatre, and booking APIs", () => {
 
     const response = await request(app)
       .post("/api/bookings")
+      .set("Authorization", `Bearer ${user.token}`)
       .send({
         userId: user.id,
         showId: show.id,
@@ -378,6 +392,7 @@ describe("movie, theatre, and booking APIs", () => {
 
     const response = await request(app)
       .post("/api/bookings")
+      .set("Authorization", `Bearer ${user.token}`)
       .send({
         userId: user.id,
         showId: show.id,
@@ -403,6 +418,7 @@ describe("movie, theatre, and booking APIs", () => {
     const cheapPayment = await createPayment(); // amount 500, but request below is for 1 seat (220)
     const response = await request(app)
       .post("/api/bookings")
+      .set("Authorization", `Bearer ${user.token}`)
       .send({
         userId: user.id,
         showId: show.id,
@@ -414,6 +430,93 @@ describe("movie, theatre, and booking APIs", () => {
     expect(response.body.message).toBe(
       "Payment amount does not match the required amount for this booking",
     );
+  });
+
+  it("rejects creating a booking with no Authorization header", async () => {
+    const user = await registerUser();
+    const movie = await createMovie();
+    const theatre = await createTheatre();
+    const screen = await createScreen(theatre.id);
+    const show = await createShow(movie.id, screen.id);
+    const payment = await createDemoPaidPayment(show.id, ["E1"]);
+
+    const response = await request(app)
+      .post("/api/bookings")
+      .send({
+        userId: user.id,
+        showId: show.id,
+        paymentId: payment.id,
+        seatNumbers: ["E1"],
+      })
+      .expect(401);
+
+    expect(response.body.message).toBe("Authentication is required");
+  });
+
+  it("rejects creating a booking for another user, even with a valid token", async () => {
+    const userA = await registerUser("user-a@test.com", "9876543210");
+    const userB = await registerUser("user-b@test.com", "9876543211");
+    const movie = await createMovie();
+    const theatre = await createTheatre();
+    const screen = await createScreen(theatre.id);
+    const show = await createShow(movie.id, screen.id);
+    const payment = await createDemoPaidPayment(show.id, ["E2"]);
+
+    // User A's valid token, but the body claims to book as User B.
+    const response = await request(app)
+      .post("/api/bookings")
+      .set("Authorization", `Bearer ${userA.token}`)
+      .send({
+        userId: userB.id,
+        showId: show.id,
+        paymentId: payment.id,
+        seatNumbers: ["E2"],
+      })
+      .expect(403);
+
+    expect(response.body.message).toBe("Cannot create a booking for another user");
+  });
+
+  it("GET /api/bookings only returns the authenticated user's own bookings", async () => {
+    const userA = await registerUser("user-a@test.com", "9876543210");
+    const userB = await registerUser("user-b@test.com", "9876543211");
+    const movie = await createMovie();
+    const theatre = await createTheatre();
+    const screen = await createScreen(theatre.id);
+    const show = await createShow(movie.id, screen.id);
+
+    const paymentA = await createDemoPaidPayment(show.id, ["F1"]);
+    await request(app)
+      .post("/api/bookings")
+      .set("Authorization", `Bearer ${userA.token}`)
+      .send({ userId: userA.id, showId: show.id, paymentId: paymentA.id, seatNumbers: ["F1"] })
+      .expect(201);
+
+    const paymentB = await createDemoPaidPayment(show.id, ["F2"]);
+    await request(app)
+      .post("/api/bookings")
+      .set("Authorization", `Bearer ${userB.token}`)
+      .send({ userId: userB.id, showId: show.id, paymentId: paymentB.id, seatNumbers: ["F2"] })
+      .expect(201);
+
+    const listForA = await request(app)
+      .get("/api/bookings")
+      .set("Authorization", `Bearer ${userA.token}`)
+      .expect(200);
+    expect(listForA.body.bookings).toHaveLength(1);
+    expect(listForA.body.bookings[0].userId).toBe(userA.id);
+
+    const listForB = await request(app)
+      .get("/api/bookings")
+      .set("Authorization", `Bearer ${userB.token}`)
+      .expect(200);
+    expect(listForB.body.bookings).toHaveLength(1);
+    expect(listForB.body.bookings[0].userId).toBe(userB.id);
+  });
+
+  it("rejects listing bookings with no Authorization header", async () => {
+    const response = await request(app).get("/api/bookings").expect(401);
+    expect(response.body.message).toBe("Authentication is required");
   });
 
   it("lists screens, shows, and payments", async () => {
@@ -448,6 +551,7 @@ describe("movie, theatre, and booking APIs", () => {
 
     const response = await request(app)
       .post("/api/bookings/movie")
+      .set("Authorization", `Bearer ${user.token}`)
       .send({
         userId: user.id,
         showId: show.id,
@@ -473,6 +577,7 @@ describe("movie, theatre, and booking APIs", () => {
 
     const response = await request(app)
       .post("/api/bookings")
+      .set("Authorization", `Bearer ${user.token}`)
       .send({
         userId: user.id,
         showId: "missing-show",
@@ -484,18 +589,18 @@ describe("movie, theatre, and booking APIs", () => {
     expect(response.body.message).toBe("Show not found");
   });
 
-  async function registerUser() {
+  async function registerUser(email = "varsha@test.com", phoneNumber = "9876543210") {
     const response = await request(app).post("/api/users/register").send({
       name: "Varsha Nath",
       gender: "female",
       location: "Bengaluru",
       moviePreference: ["Action"],
-      email: "varsha@test.com",
-      phoneNumber: "9876543210",
+      email,
+      phoneNumber,
       password: "password123",
     });
 
-    return response.body.user;
+    return { ...response.body.user, token: response.body.token as string };
   }
 
   async function createMovie() {

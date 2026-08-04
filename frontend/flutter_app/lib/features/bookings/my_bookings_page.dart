@@ -54,9 +54,10 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
       ]);
       if (!mounted) return;
 
-      final bookings = (results[0] as List<BookingRecord>)
-          .where((booking) => booking.userId == widget.userId)
-          .toList()
+      // GET /api/bookings is now scoped server-side to the authenticated
+      // caller (see backend Part 4) — no need to filter by userId here
+      // anymore, and no other user's bookings are ever downloaded to filter.
+      final bookings = (results[0] as List<BookingRecord>).toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       final shows = {for (final show in results[1] as List<Show>) show.id: show};
       final movies = {for (final movie in results[2] as List<Movie>) movie.id: movie};

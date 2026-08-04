@@ -4,14 +4,16 @@ import {
   createBooking,
   getBookings,
 } from "../../modules/bookings/booking.service";
+import { requireAuthenticatedUserId } from "../../shared/middleware/authenticate";
 
 export async function listBookingsController(
-  _request: Request,
+  request: Request,
   response: Response,
   next: NextFunction,
 ) {
   try {
-    response.status(200).json({ bookings: await getBookings() });
+    const authenticatedUserId = requireAuthenticatedUserId(request);
+    response.status(200).json({ bookings: await getBookings(authenticatedUserId) });
   } catch (error) {
     next(error);
   }
@@ -23,7 +25,8 @@ export async function createBookingController(
   next: NextFunction,
 ) {
   try {
-    const booking = await createBooking(request.body);
+    const authenticatedUserId = requireAuthenticatedUserId(request);
+    const booking = await createBooking(request.body, authenticatedUserId);
     response
       .status(201)
       .json({ message: "Booking created successfully", booking });
@@ -38,7 +41,8 @@ export async function createMovieBookingController(
   next: NextFunction,
 ) {
   try {
-    const booking = await createBooking(request.body);
+    const authenticatedUserId = requireAuthenticatedUserId(request);
+    const booking = await createBooking(request.body, authenticatedUserId);
     response
       .status(201)
       .json({ message: "Movie booking created successfully", booking });

@@ -2,6 +2,7 @@ import request from "supertest";
 import { existsSync, readFileSync, rmSync } from "fs";
 
 import { createApp } from "../src/app";
+import { verifyAuthToken } from "../src/modules/auth/token";
 import { clearUsersForTests } from "../src/modules/users/user.repository";
 import { errorLogPath } from "../src/shared/utils/error-logger";
 
@@ -37,6 +38,25 @@ describe("POST /api/users/register", () => {
       phoneNumber: "9876543210",
     });
     expect(response.body.user.id).toEqual(expect.any(String));
+  });
+
+  it("returns a token that verifies and contains the registered user's id", async () => {
+    const response = await request(app)
+      .post("/api/users/register")
+      .send({
+        name: "Varsha Nath",
+        gender: "female",
+        location: "Bengaluru",
+        moviePreference: ["Action"],
+        email: "varsha@test.com",
+        phoneNumber: "9876543210",
+        password: "password123",
+      })
+      .expect(201);
+
+    expect(typeof response.body.token).toBe("string");
+    expect(response.body.token.length).toBeGreaterThan(0);
+    expect(verifyAuthToken(response.body.token)).toEqual({ userId: response.body.user.id });
   });
 
   it("rejects duplicate email IDs", async () => {
@@ -107,6 +127,29 @@ describe("POST /api/users/login", () => {
     expect(response.body.message).toBe("Login successful");
     expect(response.body.user.email).toBe("varsha@test.com");
     expect(response.body.user.password).toBeUndefined();
+  });
+
+  it("returns a token that verifies and contains the logged-in user's id", async () => {
+    const registerResponse = await request(app).post("/api/users/register").send({
+      name: "Varsha Nath",
+      gender: "female",
+      location: "Bengaluru",
+      moviePreference: ["Action"],
+      email: "varsha@test.com",
+      phoneNumber: "9876543210",
+      password: "password123",
+    });
+
+    const response = await request(app)
+      .post("/api/users/login")
+      .send({ email: "varsha@test.com", password: "password123" })
+      .expect(200);
+
+    expect(typeof response.body.token).toBe("string");
+    expect(response.body.token.length).toBeGreaterThan(0);
+    expect(verifyAuthToken(response.body.token)).toEqual({
+      userId: registerResponse.body.user.id,
+    });
   });
 
   it("rejects unregistered users", async () => {

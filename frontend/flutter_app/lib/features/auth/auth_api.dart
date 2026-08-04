@@ -1,5 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
+import '../../core/navigation/app_navigator.dart';
+import '../../core/storage/auth_storage.dart';
 
 class AuthApi {
   AuthApi({
@@ -70,11 +74,19 @@ class AuthApi {
     Map<String, Object> payload,
   ) async {
     final request = await _httpClient.postUrl(Uri.parse('$_baseUrl$path'));
+    final token = await AuthStorage.getToken();
+    if (token != null && token.isNotEmpty) {
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+    }
     request.headers.contentType = ContentType.json;
     request.write(jsonEncode(payload));
 
     final response = await request.close();
     final body = await response.transform(utf8.decoder).join();
+
+    if (response.statusCode == 401) {
+      unawaited(AppNavigator.forceLogout());
+    }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw AuthApiException(_readErrorMessage(body));

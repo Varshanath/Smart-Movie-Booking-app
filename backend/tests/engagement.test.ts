@@ -66,7 +66,10 @@ describe("engagement APIs", () => {
     const byMovie = await request(app).get(`/api/movies/${movie.id}/reviews`).expect(200);
     expect(byMovie.body.reviews).toHaveLength(1);
 
-    const byUser = await request(app).get(`/api/users/${user.id}/reviews`).expect(200);
+    const byUser = await request(app)
+      .get(`/api/users/${user.id}/reviews`)
+      .set("Authorization", `Bearer ${user.token}`)
+      .expect(200);
     expect(byUser.body.reviews).toHaveLength(1);
   });
 
@@ -88,23 +91,36 @@ describe("engagement APIs", () => {
 
     await request(app)
       .post(`/api/users/${user.id}/watchlist`)
+      .set("Authorization", `Bearer ${user.token}`)
       .send({ movieId: movie.id })
       .expect(201);
 
-    const listed = await request(app).get(`/api/users/${user.id}/watchlist`).expect(200);
+    const listed = await request(app)
+      .get(`/api/users/${user.id}/watchlist`)
+      .set("Authorization", `Bearer ${user.token}`)
+      .expect(200);
     expect(listed.body.watchlist).toContainEqual(
       expect.objectContaining({ userId: user.id, movieId: movie.id }),
     );
 
-    await request(app).delete(`/api/users/${user.id}/watchlist/${movie.id}`).expect(200);
+    await request(app)
+      .delete(`/api/users/${user.id}/watchlist/${movie.id}`)
+      .set("Authorization", `Bearer ${user.token}`)
+      .expect(200);
 
-    const afterRemoval = await request(app).get(`/api/users/${user.id}/watchlist`).expect(200);
+    const afterRemoval = await request(app)
+      .get(`/api/users/${user.id}/watchlist`)
+      .set("Authorization", `Bearer ${user.token}`)
+      .expect(200);
     expect(afterRemoval.body.watchlist).toHaveLength(0);
   });
 
   it("returns an empty recommendations list when none exist", async () => {
     const user = await registerUser();
-    const response = await request(app).get(`/api/users/${user.id}/recommendations`).expect(200);
+    const response = await request(app)
+      .get(`/api/users/${user.id}/recommendations`)
+      .set("Authorization", `Bearer ${user.token}`)
+      .expect(200);
     expect(response.body.recommendations).toEqual([]);
   });
 
@@ -112,6 +128,7 @@ describe("engagement APIs", () => {
     const user = await registerUser();
     const response = await request(app)
       .post(`/api/users/${user.id}/notifications/missing-id/read`)
+      .set("Authorization", `Bearer ${user.token}`)
       .expect(404);
     expect(response.body.message).toBe("Notification not found");
   });
@@ -121,10 +138,14 @@ describe("engagement APIs", () => {
 
     await request(app)
       .post(`/api/users/${user.id}/search-history`)
+      .set("Authorization", `Bearer ${user.token}`)
       .send({ query: "Batman" })
       .expect(201);
 
-    const response = await request(app).get(`/api/users/${user.id}/search-history`).expect(200);
+    const response = await request(app)
+      .get(`/api/users/${user.id}/search-history`)
+      .set("Authorization", `Bearer ${user.token}`)
+      .expect(200);
     expect(response.body.searchHistory).toContainEqual(
       expect.objectContaining({ userId: user.id, query: "Batman" }),
     );
@@ -140,6 +161,7 @@ describe("engagement APIs", () => {
 
     const response = await request(app)
       .post(`/api/users/${user.id}/ai-chat`)
+      .set("Authorization", `Bearer ${user.token}`)
       .send({ prompt: "Recommend a thriller." })
       .expect(201);
 
@@ -154,7 +176,10 @@ describe("engagement APIs", () => {
       response: "Here are a few thriller picks for you.",
     });
 
-    const history = await request(app).get(`/api/users/${user.id}/ai-chat`).expect(200);
+    const history = await request(app)
+      .get(`/api/users/${user.id}/ai-chat`)
+      .set("Authorization", `Bearer ${user.token}`)
+      .expect(200);
     expect(history.body.messages).toHaveLength(1);
   });
 
@@ -167,12 +192,16 @@ describe("engagement APIs", () => {
 
     const response = await request(app)
       .post(`/api/users/${user.id}/ai-chat`)
+      .set("Authorization", `Bearer ${user.token}`)
       .send({ prompt: "Recommend a thriller." })
       .expect(503);
 
     expect(response.body.message).toBe("AI agent service is unavailable");
 
-    const history = await request(app).get(`/api/users/${user.id}/ai-chat`).expect(200);
+    const history = await request(app)
+      .get(`/api/users/${user.id}/ai-chat`)
+      .set("Authorization", `Bearer ${user.token}`)
+      .expect(200);
     expect(history.body.messages).toHaveLength(0);
   });
 
@@ -214,7 +243,7 @@ describe("engagement APIs", () => {
       phoneNumber: "9876500000",
       password: "password123",
     });
-    return response.body.user;
+    return { ...response.body.user, token: response.body.token as string };
   }
 
   async function createMovie() {

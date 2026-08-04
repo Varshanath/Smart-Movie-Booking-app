@@ -7,6 +7,7 @@ import {
   addSearchHistoryEntry,
   getSearchHistory,
 } from "../../modules/search-history/search-history.service";
+import { requireAuthenticatedUserId } from "../../shared/middleware/authenticate";
 
 export async function listRecommendationsController(
   request: Request,
@@ -72,7 +73,12 @@ export async function createSearchHistoryController(
 
 export async function listAiChatController(request: Request, response: Response, next: NextFunction) {
   try {
-    response.status(200).json({ messages: await getAiChatHistory(request.params.userId) });
+    // requireOwnUser (see user.routes.ts) already guarantees params.userId
+    // === req.user.id, but reading the id from req.user directly here keeps
+    // this controller correct even if that route wiring ever changes — the
+    // agent must only ever see an identity the JWT actually vouches for.
+    const authenticatedUserId = requireAuthenticatedUserId(request);
+    response.status(200).json({ messages: await getAiChatHistory(authenticatedUserId) });
   } catch (error) {
     next(error);
   }
@@ -80,7 +86,8 @@ export async function listAiChatController(request: Request, response: Response,
 
 export async function createAiChatController(request: Request, response: Response, next: NextFunction) {
   try {
-    const message = await sendAiChatMessage(request.params.userId, request.body);
+    const authenticatedUserId = requireAuthenticatedUserId(request);
+    const message = await sendAiChatMessage(authenticatedUserId, request.body);
     response.status(201).json({ message });
   } catch (error) {
     next(error);

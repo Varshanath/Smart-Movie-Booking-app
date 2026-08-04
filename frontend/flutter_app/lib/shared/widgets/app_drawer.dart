@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../app/app_routes.dart';
+import '../../core/storage/auth_storage.dart';
 import '../../features/bookings/my_bookings_page.dart';
 import '../../features/movies/movie_booking_api.dart';
 import '../../features/profile/profile_settings_page.dart';
@@ -93,6 +96,11 @@ class AppDrawer extends StatelessWidget {
               leading: const Icon(Icons.logout),
               title: const Text('Logout'),
               onTap: () {
+                // Navigate immediately (logout should feel instant) and
+                // wipe the stored session in the background — removes
+                // every authenticated route from the stack so Back can't
+                // return to them after logout.
+                unawaited(AuthStorage.clearToken());
                 Navigator.pushNamedAndRemoveUntil(
                   context,
                   AppRoutes.login,

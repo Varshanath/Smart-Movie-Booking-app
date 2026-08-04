@@ -14,11 +14,12 @@ export async function registerUser(
   next: NextFunction,
 ) {
   try {
-    const user = await createUser(request.body);
+    const { user, token } = await createUser(request.body);
 
     response.status(201).json({
       message: "User registered successfully",
       user,
+      token,
     });
   } catch (error) {
     next(error);
@@ -31,11 +32,12 @@ export async function login(
   next: NextFunction,
 ) {
   try {
-    const user = await loginUser(request.body);
+    const { user, token } = await loginUser(request.body);
 
     response.status(200).json({
       message: "Login successful",
       user,
+      token,
     });
   } catch (error) {
     next(error);

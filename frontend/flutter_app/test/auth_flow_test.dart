@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_movie_booking_app/app/app_routes.dart';
 import 'package:smart_movie_booking_app/app/smart_movie_booking_app.dart';
+import 'package:smart_movie_booking_app/core/storage/auth_storage.dart';
 import 'package:smart_movie_booking_app/features/auth/auth_api.dart';
 import 'package:smart_movie_booking_app/features/auth/change_password_page.dart';
 import 'package:smart_movie_booking_app/features/auth/login_page.dart';
@@ -11,6 +12,15 @@ import 'package:smart_movie_booking_app/features/movies/movie_booking_api.dart';
 import 'package:smart_movie_booking_app/features/movies/movie_list_page.dart';
 
 void main() {
+  // flutter_secure_storage's Windows backend persists to real, on-disk OS
+  // storage rather than a mockable platform channel — so LoginPage's
+  // session-restore check (AuthStorage.isLoggedIn()) can otherwise pick up
+  // a real leftover credential from outside this test run entirely. Every
+  // test in this file must start from a guaranteed-empty session.
+  setUp(() async {
+    await AuthStorage.clearToken();
+  });
+
   testWidgets('shows login page first', (tester) async {
     await tester.pumpWidget(const SmartMovieBookingApp());
 

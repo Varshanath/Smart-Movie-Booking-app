@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import '../../core/navigation/app_navigator.dart';
+import '../../core/storage/auth_storage.dart';
 import 'models.dart';
 
 class MovieBookingApi {
@@ -186,17 +189,28 @@ class MovieBookingApi {
     return SearchHistoryEntry.fromJson(response['entry'] as Map<String, dynamic>);
   }
 
-  Future<List<AiChatMessage>> getAiChatHistory(String userId) async {
+  // No userId parameter — the path segment must equal the authenticated
+  // caller (the backend rejects a mismatch with 403 regardless), so the id
+  // always comes from the signed-in session, never from a value the caller
+  // typed or was asked to supply.
+  Future<List<AiChatMessage>> getAiChatHistory() async {
+    final userId = await _requireAuthenticatedUserId();
     final response = await _get('/api/users/$userId/ai-chat');
     return _list(response['messages']).map(AiChatMessage.fromJson).toList();
   }
 
-  Future<AiChatMessage> sendAiChatMessage({
-    required String userId,
-    required String prompt,
-  }) async {
+  Future<AiChatMessage> sendAiChatMessage(String prompt) async {
+    final userId = await _requireAuthenticatedUserId();
     final response = await _post('/api/users/$userId/ai-chat', {'prompt': prompt});
     return AiChatMessage.fromJson(response['message'] as Map<String, dynamic>);
+  }
+
+  Future<String> _requireAuthenticatedUserId() async {
+    final userId = await AuthStorage.getUserId();
+    if (userId == null || userId.isEmpty) {
+      throw const MovieBookingApiException('You need to be logged in for this.');
+    }
+    return userId;
   }
 
   Future<List<Coupon>> getCoupons() async {
@@ -241,6 +255,7 @@ class MovieBookingApi {
 
   Future<Map<String, dynamic>> _get(String path) async {
     final request = await _httpClient.getUrl(Uri.parse('$_baseUrl$path'));
+    await _attachAuthHeader(request);
     return _send(request);
   }
 
@@ -249,6 +264,7 @@ class MovieBookingApi {
     Map<String, Object?> payload,
   ) async {
     final request = await _httpClient.postUrl(Uri.parse('$_baseUrl$path'));
+    await _attachAuthHeader(request);
     request.headers.contentType = ContentType.json;
     request.write(jsonEncode(payload));
     return _send(request);
@@ -256,12 +272,31 @@ class MovieBookingApi {
 
   Future<Map<String, dynamic>> _delete(String path) async {
     final request = await _httpClient.deleteUrl(Uri.parse('$_baseUrl$path'));
+    await _attachAuthHeader(request);
     return _send(request);
+  }
+
+  // Single choke point for every request this client makes — this is what
+  // lets every screen just call e.g. getWatchlist(userId) without knowing
+  // anything about tokens; the JWT never has to be threaded through widget
+  // constructors.
+  Future<void> _attachAuthHeader(HttpClientRequest request) async {
+    final token = await AuthStorage.getToken();
+    if (token != null && token.isNotEmpty) {
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+    }
   }
 
   Future<Map<String, dynamic>> _send(HttpClientRequest request) async {
     final response = await request.close();
     final body = await response.transform(utf8.decoder).join();
+
+    if (response.statusCode == 401) {
+      // No refresh-token flow for this phase — a rejected/expired token
+      // just signs the user out. Fire-and-forget so the exception below
+      // still surfaces to whichever screen made this call.
+      unawaited(AppNavigator.forceLogout());
+    }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw MovieBookingApiException(_readErrorMessage(body));

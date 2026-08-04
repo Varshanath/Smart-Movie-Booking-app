@@ -67,7 +67,7 @@ describeIfPostgres("booking concurrency (real PostgreSQL, no in-memory fallback)
   });
 
   it("allows exactly one of two concurrent requests for the same seat to succeed", async () => {
-    const { showId } = await createFixtureShow();
+    const { showId, token } = await createFixtureShow();
     const paymentA = await createPayment();
     const paymentB = await createPayment();
     createdIds.paymentIds.push(paymentA.id, paymentB.id);
@@ -75,9 +75,11 @@ describeIfPostgres("booking concurrency (real PostgreSQL, no in-memory fallback)
     const [responseA, responseB] = await Promise.all([
       request(app)
         .post("/api/bookings")
+        .set("Authorization", `Bearer ${token}`)
         .send({ userId: createdIds.userId, showId, paymentId: paymentA.id, seatNumbers: ["A1"] }),
       request(app)
         .post("/api/bookings")
+        .set("Authorization", `Bearer ${token}`)
         .send({ userId: createdIds.userId, showId, paymentId: paymentB.id, seatNumbers: ["A1"] }),
     ]);
 
@@ -98,7 +100,7 @@ describeIfPostgres("booking concurrency (real PostgreSQL, no in-memory fallback)
   });
 
   it("allows two concurrent requests for different seats on the same show to both succeed", async () => {
-    const { showId } = await createFixtureShow();
+    const { showId, token } = await createFixtureShow();
     const paymentA = await createPayment();
     const paymentB = await createPayment();
     createdIds.paymentIds.push(paymentA.id, paymentB.id);
@@ -106,9 +108,11 @@ describeIfPostgres("booking concurrency (real PostgreSQL, no in-memory fallback)
     const [responseA, responseB] = await Promise.all([
       request(app)
         .post("/api/bookings")
+        .set("Authorization", `Bearer ${token}`)
         .send({ userId: createdIds.userId, showId, paymentId: paymentA.id, seatNumbers: ["A1"] }),
       request(app)
         .post("/api/bookings")
+        .set("Authorization", `Bearer ${token}`)
         .send({ userId: createdIds.userId, showId, paymentId: paymentB.id, seatNumbers: ["B1"] }),
     ]);
 
@@ -124,7 +128,7 @@ describeIfPostgres("booking concurrency (real PostgreSQL, no in-memory fallback)
   });
 
   it("rolls back and releases the lock when the booking insert itself fails", async () => {
-    const { showId, userId } = await createFixtureShow();
+    const { showId, userId, token } = await createFixtureShow();
     const nonExistentPaymentId = "00000000-0000-4000-8000-000000000000";
 
     // Calls the repository function directly (bypassing booking.service.ts's
@@ -154,6 +158,7 @@ describeIfPostgres("booking concurrency (real PostgreSQL, no in-memory fallback)
     createdIds.paymentIds.push(payment.id);
     const response = await request(app)
       .post("/api/bookings")
+      .set("Authorization", `Bearer ${token}`)
       .send({ userId, showId, paymentId: payment.id, seatNumbers: ["A1"] });
     expect(response.status).toBe(201);
   });
@@ -171,6 +176,7 @@ describeIfPostgres("booking concurrency (real PostgreSQL, no in-memory fallback)
       password: "password123",
     });
     const userId = userResponse.body.user.id;
+    const token = userResponse.body.token as string;
 
     const movieResponse = await request(app).post("/api/movies").send({
       title: `Concurrency Test Movie ${suffix}`,
@@ -206,7 +212,7 @@ describeIfPostgres("booking concurrency (real PostgreSQL, no in-memory fallback)
     const showId = showResponse.body.show.id;
 
     createdIds = { ...createdIds, userId, movieId, theatreId, locationId, screenId, showId };
-    return { userId, movieId, theatreId, screenId, showId };
+    return { userId, movieId, theatreId, screenId, showId, token };
   }
 
   async function createPayment() {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/navigation/app_navigator.dart';
 import '../features/auth/login_page.dart';
 import '../features/auth/register_page.dart';
 import '../features/movies/movie_list_page.dart';
@@ -12,6 +13,7 @@ class SmartMovieBookingApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: AppNavigator.key,
       title: 'Smart Movie Booking',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,

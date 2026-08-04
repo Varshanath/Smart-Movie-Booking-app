@@ -41,6 +41,10 @@ const SELECT_COLUMNS = `
   updated_at AS "updatedAt"
 `;
 
+// All bookings, unfiltered — deliberately NOT used by the public GET
+// /api/bookings endpoint anymore (see listBookingsByUserId below, which
+// booking.service.ts uses instead). Kept for internal, non-user-scoped
+// aggregate use (analytics.repository.ts's admin-style stats endpoints).
 export async function listBookings() {
   if (isPostgresEnabled && pool) {
     const result = await pool.query(
@@ -50,6 +54,18 @@ export async function listBookings() {
   }
 
   return Array.from(bookings.values());
+}
+
+export async function listBookingsByUserId(userId: string) {
+  if (isPostgresEnabled && pool) {
+    const result = await pool.query(
+      `SELECT ${SELECT_COLUMNS} FROM bookings WHERE user_id = $1 ORDER BY created_at DESC`,
+      [userId],
+    );
+    return result.rows as Booking[];
+  }
+
+  return Array.from(bookings.values()).filter((booking) => booking.userId === userId);
 }
 
 export async function listBookingsByShowId(showId: string) {
