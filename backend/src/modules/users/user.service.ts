@@ -2,6 +2,7 @@ import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 
 import { signAuthToken } from "../auth/token";
 import { ApiError } from "../../shared/utils/api-error";
+import { logLoginAttempt } from "../../shared/utils/login-logger";
 import {
   ChangePasswordInput,
   CreateUserInput,
@@ -54,8 +55,15 @@ export async function loginUser(payload: unknown) {
   const user = await findUserByEmail(input.email);
 
   if (!user || !verifyPassword(input.password, user.passwordHash)) {
+    logLoginAttempt({
+      outcome: "failure",
+      email: input.email,
+      reason: "Email ID or password is incorrect",
+    });
     throw new ApiError(401, "Email ID or password is incorrect");
   }
+
+  logLoginAttempt({ outcome: "success", email: user.email, userId: user.id });
 
   return { user: toPublicUser(user), token: signAuthToken(user.id) };
 }
